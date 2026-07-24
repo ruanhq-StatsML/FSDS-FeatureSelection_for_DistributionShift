@@ -1,6 +1,8 @@
-# Distribution Shift Feature Selection Benchmark
+# Distribution Shift Feature Selection - Covariate Shift and Concept Drift
 
-This repository implements a comprehensive benchmark for feature selection under distribution shift, covering both covariate shift and concept drift scenarios.
+This repository implements a comprehensive benchmark for feature selection under distribution shift, covering both covariate shift and concept drift scenarios -
+- ***For concept drift, the meta learner*** is leveraged to capture the discrepancy of the conditional mean E[Y|X, T=1](new batch of data) - E[Y|X, T=0], achieved SOTA performance on multiple modalities of datasets.
+- ***For covaraite shift, the RF OOB variable importance along with the LOCO-MMD*** is leveraged with the highly competitive performance in comparison with the current SOTA(fsl-net and datafix), yielding higher computationally effciency.
 
 ## Benchmark Methods
 
@@ -13,7 +15,7 @@ The benchmark includes the following methods, categorized by their underlying me
 - **L1-Penalized Regression - specified** (For Concept Drift Only) — from [arXiv:2505.20634](https://arxiv.org/pdf/2505.20634)
 - **L1-Penalized Regression - misspecified** (For Concept Drift Only) — from [arXiv:2505.20634](https://arxiv.org/pdf/2505.20634)
 - **Knockoff based procedure** (Primarily for Concept Drift) — from [arXiv:2505.20634](https://arxiv.org/pdf/2505.20634)
-- **GRF** (Generalized Random Forest) — from Meta-Learner Variable Importance Procedure (Primarily for Concept Drift)
+- **GRF** (Generalized Random Forest) — from Causal Forest Variable Importance Procedure (Primarily for Concept Drift)
 - **PermuCATE** (Permutation Variable Importance in the PO-pseudo outcome learner) — from Meta-Learner Variable Importance Procedure
 - **LOCO (R-risk)** (Primarily for Concept Drift, indeed for concept drift only) — from Meta-Learner Variable Importance Procedure
 
@@ -57,7 +59,7 @@ The benchmark includes the following methods, categorized by their underlying me
 - **Illustration for the impossibility for decomposing covariate shift & concept drift into individual features** 
 - ***HSIC(Covariate Shift)***
 <img width="2873" height="2225" alt="linearCovariateShift_HSIC_Gamma02" src="https://github.com/user-attachments/assets/5be0201c-7157-453c-95f8-971d54d2bf3d" />
-- ***MMD(Covariate shift)***
+- ***MMD(Covariate Shift)***
 <img width="2873" height="2225" alt="linearCovariateShift_MMD_Gamma02" src="https://github.com/user-attachments/assets/eaeed113-d43c-4d95-b353-3a30883690a1" />
 - ***R-Risk(Concept Drift)***
 <img width="2873" height="2225" alt="linearConceptDrift_RRisk_deltabeta03" src="https://github.com/user-attachments/assets/9ec4f09f-d7b6-4a44-8fe8-fbff4fc2bef0" />
@@ -65,7 +67,7 @@ The benchmark includes the following methods, categorized by their underlying me
 ### Results
 
 - The `results/` folder contains all data file results. Files uploaded to Overleaf are formatted without underscores (`_`) in the naming convention.
-- ***Selected Results*** 
+- **Selected Results**
 <img width="1190" height="1448" alt="Screenshot 2026-07-24 at 11 08 22" src="https://github.com/user-attachments/assets/2a5b82d4-e98c-4a40-a32a-48663e23fe2a" />
 <img width="1468" height="1200" alt="Screenshot 2026-07-24 at 11 07 37" src="https://github.com/user-attachments/assets/8286cf69-48d2-4556-9c63-7b0e92fb50f1" />
 <img width="1182" height="920" alt="Screenshot 2026-07-24 at 11 03 10" src="https://github.com/user-attachments/assets/b7939189-ede2-4b4b-bac3-254e3a58c909" />
