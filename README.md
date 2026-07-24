@@ -1,6 +1,8 @@
 # Distribution Shift Feature Selection - Covariate Shift and Concept Drift
 
-This repository implements a comprehensive benchmark for feature selection under distribution shift, covering both covariate shift and concept drift scenarios.
+This repository implements a comprehensive benchmark for feature selection under distribution shift, covering both covariate shift and concept drift scenarios -
+*** For concept drift, the meta learner is leveraged to capture the discrepancy of the conditional mean E[Y|X, T=1](new batch of data) - E[Y|X, T=0], achieved SOTA performance on multiple modalities of datasets ***
+*** For covaraite shift, the RF OOB variable importance along with the LOCO-MMD is leveraged with the highly competitive performance in comparison with the current SOTA(fsl-net and datafix), yielding higher computationally effciency ***
 
 ## Benchmark Methods
 
