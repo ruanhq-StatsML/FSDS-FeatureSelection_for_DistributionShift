@@ -54,15 +54,24 @@ The benchmark includes the following methods, categorized by their underlying me
 ### Non-unique Decomposition & Causal Testing
 
 - **Nonunique decomposition of Covariate Shift & Concept Drift & Causal Testing for Distribution Shift** — Colab notebook: [Causal Learner as Feature Selection](https://colab.research.google.com/drive/1w5fKyTqnWoKEfixGnpaZCMSzQg0IOr2)
-- **Illustration for the impossibility for decomposing covariate shift & concept drift into individual features** 0
-
-
+- **Illustration for the impossibility for decomposing covariate shift & concept drift into individual features** 
+- ***HSIC(Covariate Shift)***
+<img width="2873" height="2225" alt="linearCovariateShift_HSIC_Gamma02" src="https://github.com/user-attachments/assets/5be0201c-7157-453c-95f8-971d54d2bf3d" />
+- ***MMD(Covariate shift)***
+<img width="2873" height="2225" alt="linearCovariateShift_MMD_Gamma02" src="https://github.com/user-attachments/assets/eaeed113-d43c-4d95-b353-3a30883690a1" />
+- ***R-Risk(Concept Drift)***
+<img width="2873" height="2225" alt="linearConceptDrift_RRisk_deltabeta03" src="https://github.com/user-attachments/assets/9ec4f09f-d7b6-4a44-8fe8-fbff4fc2bef0" />
 
 ### Results
 
 - The `results/` folder contains all data file results. Files uploaded to Overleaf are formatted without underscores (`_`) in the naming convention.
+- ***Selected Results*** 
+<img width="1190" height="1448" alt="Screenshot 2026-07-24 at 11 08 22" src="https://github.com/user-attachments/assets/2a5b82d4-e98c-4a40-a32a-48663e23fe2a" />
+<img width="1468" height="1200" alt="Screenshot 2026-07-24 at 11 07 37" src="https://github.com/user-attachments/assets/8286cf69-48d2-4556-9c63-7b0e92fb50f1" />
+<img width="1182" height="920" alt="Screenshot 2026-07-24 at 11 03 10" src="https://github.com/user-attachments/assets/b7939189-ede2-4b4b-bac3-254e3a58c909" />
 
 ### Real-Data Applications
+
 
 The following real-world datasets are included with corresponding benchmark scripts:
 
