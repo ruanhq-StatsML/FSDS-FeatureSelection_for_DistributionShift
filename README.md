@@ -59,7 +59,7 @@ The benchmark includes the following methods, categorized by their underlying me
 - **Illustration for the impossibility for decomposing covariate shift & concept drift into individual features** 
 - ***HSIC(Covariate Shift)***
 <img width="2873" height="2225" alt="linearCovariateShift_HSIC_Gamma02" src="https://github.com/user-attachments/assets/5be0201c-7157-453c-95f8-971d54d2bf3d" />
-- ***MMD(Covariate shift)***
+- ***MMD(Covariate Shift)***
 <img width="2873" height="2225" alt="linearCovariateShift_MMD_Gamma02" src="https://github.com/user-attachments/assets/eaeed113-d43c-4d95-b353-3a30883690a1" />
 - ***R-Risk(Concept Drift)***
 <img width="2873" height="2225" alt="linearConceptDrift_RRisk_deltabeta03" src="https://github.com/user-attachments/assets/9ec4f09f-d7b6-4a44-8fe8-fbff4fc2bef0" />
