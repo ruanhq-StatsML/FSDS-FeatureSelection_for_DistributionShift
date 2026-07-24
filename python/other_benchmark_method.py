@@ -875,28 +875,6 @@ def benchmark_whole_feature_selection(
 
 
 
-####
-#Comparing the efficiency of all of these procedures with the sensitivity of that regions:
-
-
-def calculate_mCE(results_matrix, baseline_alexnet_errors = None):
-    all_accuracies = []
-    for c_type, severities in results_matrix.items():
-        for severity, acc in severity.items():
-            all_accuracies.append(acc)
-    mean_accuracy = np.mean(all_accuracies)
-    return mean_accuracy
-
-
-
-
-
-
-
-
-
-
-
 
 
 
