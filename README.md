@@ -1,4 +1,4 @@
-# Distribution Shift Feature Selection Benchmark
+# Distribution Shift Feature Selection - Covariate Shift and Concept Drift
 
 This repository implements a comprehensive benchmark for feature selection under distribution shift, covering both covariate shift and concept drift scenarios.
 
