@@ -67,7 +67,7 @@ The benchmark includes the following methods, categorized by their underlying me
 ### Results
 
 - The `results/` folder contains all data file results. Files uploaded to Overleaf are formatted without underscores (`_`) in the naming convention.
-- ***Selected Results*** 
+- **Selected Results**
 <img width="1190" height="1448" alt="Screenshot 2026-07-24 at 11 08 22" src="https://github.com/user-attachments/assets/2a5b82d4-e98c-4a40-a32a-48663e23fe2a" />
 <img width="1468" height="1200" alt="Screenshot 2026-07-24 at 11 07 37" src="https://github.com/user-attachments/assets/8286cf69-48d2-4556-9c63-7b0e92fb50f1" />
 <img width="1182" height="920" alt="Screenshot 2026-07-24 at 11 03 10" src="https://github.com/user-attachments/assets/b7939189-ede2-4b4b-bac3-254e3a58c909" />
