@@ -1,0 +1,79 @@
+# Distribution Shift Feature Selection Benchmark
+
+This repository implements a comprehensive benchmark for feature selection under distribution shift, covering both covariate shift and concept drift scenarios.
+
+## Benchmark Methods
+
+The benchmark includes the following methods, categorized by their underlying methodology:
+
+### Concept Drift Methods
+
+- **ARD**: Automatic Relevance Divergence (Primary for Concept Drift)
+- **Delta Shapley Value** (Primary for Concept Drift)
+- **L1-Penalized Regression - specified** (For Concept Drift Only) — from [arXiv:2505.20634](https://arxiv.org/pdf/2505.20634)
+- **L1-Penalized Regression - misspecified** (For Concept Drift Only) — from [arXiv:2505.20634](https://arxiv.org/pdf/2505.20634)
+- **Knockoff based procedure** (Primarily for Concept Drift) — from [arXiv:2505.20634](https://arxiv.org/pdf/2505.20634)
+- **GRF** (Generalized Random Forest) — from Meta-Learner Variable Importance Procedure (Primarily for Concept Drift)
+- **PermuCATE** (Permutation Variable Importance in the PO-pseudo outcome learner) — from Meta-Learner Variable Importance Procedure
+- **LOCO (R-risk)** (Primarily for Concept Drift, indeed for concept drift only) — from Meta-Learner Variable Importance Procedure
+
+### Covariate Shift Methods
+
+- **MMD-LOCO** (Maximum Mean Discrepancy with LOCO — Leave-One-Covariate-Out, Covariate Shift) — from statistical-based measure procedure
+- **HSIC-LOCO** (Hilbert-Schmidt Independence Criterion, Covariate Shift) — from statistical-based measure procedure
+- **Boruta** (Covariate Shift Only) — built on top of binary classifier to distinguish two batches of data (P(X_exist) and P(X_new))
+- **ShadowVIMP** (Covariate Shift Only) — built on top of binary classifier to distinguish two batches of data (P(X_exist) and P(X_new))
+
+### Joint Distribution (Covariate + Concept) Methods
+
+- **FSL-Net** (Originally for Covariate Shift, can be adapted to Joint Distribution) — from [AI-sandbox/FSL-Net](https://github.com/AI-sandbox/FSL-Net), current SOTA
+- **Data-Fix** (Covariate Shift, can be adapted to Joint Distribution) — from [AI-sandbox/DataFix](https://github.com/AI-sandbox/DataFix), current SOTA
+- **DRPerm-LOCO** (Doubly Robust Pseudo-Outcome Learner + Leave-One-Covariate-Out, both for covariate shift and concept drift)
+- **Vita PIMP** (Permutation Variable Importance) — built on top of binary classifier to distinguish two batches of data (P(X_exist) and P(X_new))
+
+### Proposed Method
+
+- **RF-domain: OOB-VIMP** for Random Forest classifier (XGBoost, MLP, and Kernel Ridge Regression are also leveraged)
+
+### Additional Domain Classifier Methods
+- **Boruta** (Covariate Shift Only)
+- **ShadowVIMP** (Covariate Shift Only)
+- **Vita PIMP** (Permutation Variable Importance)
+
+## Repository Structure
+
+### Core Scripts
+
+- **`benchmark_methods.py`**: Main function for comparing all benchmark methods across different scenarios
+- **`synthetic_DGP.py`**: Data-generating processes for synthetic experiments
+- **`real_data_utils.py`**: Utility functions for real-data applications
+- **`fsds_nonuniqueness.py`**: Non-unique decomposition for covariate shift (MMD, HSIC) and concept drift (R-risk), with the visualization illustration displayed in https://colab.research.google.com/drive/1w5fKyTqnWoKEfixGnpaZCMSzQg0IOr2-
+- **`domain_classifier_VIMP_whole.py`**: RF VIMP adapter along with the other domain classifier methods
+- **`fetch_tabular_openml_datasets.py`**: Data preprocessing for 8 OpenML sklearn datasets; results stored in `real_data/tabular/`
+
+### Non-unique Decomposition & Causal Testing
+
+- **Nonunique decomposition of Covariate Shift & Concept Drift & Causal Testing for Distribution Shift** — Colab notebook: [Causal Learner as Feature Selection](https://colab.research.google.com/drive/1w5fKyTqnWoKEfixGnpaZCMSzQg0IOr2)
+
+### Results
+
+- The `results/` folder contains all data file results. Files uploaded to Overleaf are formatted without underscores (`_`) in the naming convention.
+
+### Real-Data Applications
+
+The following real-world datasets are included with corresponding benchmark scripts:
+
+- **FMoW** (Functional Map of the World, https://github.com/fMoW/dataset)
+- **WhyShift** (https://github.com/namkoong-lab/whyshift)
+- **Tabular** (8 OpenML datasets, fetch_openml)
+- **ChronoBerg** (gradual sentiment shift data, https://huggingface.co/datasets/spaul25/Chronoberg)
+
+### Sensitivity Analyses
+
+- **Weak overlap sensitivity analysis**: `weakly_overlapped_benchmark.py`
+- **Outcome Model Sensitivity Analysis**: `outcome_model_sensitivity.py`
+- **Adversarial perturbations**: `adversarial_conceptdrift.py` — includes 5 types of adversarial perturbations for concept drift robustness testing.
+
+
+
+

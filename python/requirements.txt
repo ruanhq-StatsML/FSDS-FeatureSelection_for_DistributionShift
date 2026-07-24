@@ -1,0 +1,17 @@
+# requirements.txt
+numpy
+pandas
+scipy
+scikit-learn
+statsmodels
+cvxpy
+scs
+shap
+knockpy
+joblib 
+torch
+econml
+rpy2
+boruta
+xgboost
+gc
