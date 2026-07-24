@@ -15,7 +15,7 @@ The benchmark includes the following methods, categorized by their underlying me
 - **L1-Penalized Regression - specified** (For Concept Drift Only) — from [arXiv:2505.20634](https://arxiv.org/pdf/2505.20634)
 - **L1-Penalized Regression - misspecified** (For Concept Drift Only) — from [arXiv:2505.20634](https://arxiv.org/pdf/2505.20634)
 - **Knockoff based procedure** (Primarily for Concept Drift) — from [arXiv:2505.20634](https://arxiv.org/pdf/2505.20634)
-- **GRF** (Generalized Random Forest) — from Meta-Learner Variable Importance Procedure (Primarily for Concept Drift)
+- **GRF** (Generalized Random Forest) — from Causal Forest Variable Importance Procedure (Primarily for Concept Drift)
 - **PermuCATE** (Permutation Variable Importance in the PO-pseudo outcome learner) — from Meta-Learner Variable Importance Procedure
 - **LOCO (R-risk)** (Primarily for Concept Drift, indeed for concept drift only) — from Meta-Learner Variable Importance Procedure
 
