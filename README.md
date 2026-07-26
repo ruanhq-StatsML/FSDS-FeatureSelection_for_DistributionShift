@@ -55,7 +55,7 @@ The benchmark includes the following methods, categorized by their underlying me
 
 ### Non-unique Decomposition & Causal Testing
 
-- **Nonunique decomposition of Covariate Shift & Concept Drift & Causal Testing for Distribution Shift** — Colab notebook: [Causal Learner as Feature Selection](https://colab.research.google.com/drive/1w5fKyTqnWoKEfixGnpaZCMSzQg0IOr2)
+- **Nonunique decomposition of Covariate Shift & Concept Drift & Causal Testing for Distribution Shift** — Colab notebook: [Meta Learner as Feature Selection](https://colab.research.google.com/drive/1w5fKyTqnWoKEfixGnpaZCMSzQg0IOr2)
 - **Illustration for the impossibility for decomposing covariate shift & concept drift into individual features** 
 - ***HSIC(Covariate Shift)***
 <img width="2873" height="2225" alt="linearCovariateShift_HSIC_Gamma02" src="https://github.com/user-attachments/assets/5be0201c-7157-453c-95f8-971d54d2bf3d" />
