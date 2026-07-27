@@ -85,5 +85,6 @@ The following real-world datasets are included with corresponding benchmark scri
 ### Sensitivity Analyses
 
 - **Weak overlap sensitivity analysis**: `weakly_overlapped_benchmark.py`
+<img width="1311" height="1234" alt="feature_selection_overlap_sensitivity_analysis" src="https://github.com/user-attachments/assets/8e816930-d64e-4d0b-a463-39f69f9ea9be" />
 - **Outcome Model Sensitivity Analysis**: `outcome_model_sensitivity.py`
 - **Adversarial perturbations**: `adversarial_conceptdrift.py` — includes 5 types of adversarial perturbations for concept drift robustness testing.
