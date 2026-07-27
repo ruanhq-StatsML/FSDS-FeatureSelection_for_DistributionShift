@@ -53,7 +53,7 @@ The benchmark includes the following methods, categorized by their underlying me
 - **`domain_classifier_VIMP_whole.py`**: RF VIMP adapter along with the other domain classifier methods
 - **`fetch_tabular_openml_datasets.py`**: Data preprocessing for 8 OpenML sklearn datasets; results stored in `real_data/tabular/`
 
-### Non-unique Decomposition & Causal Testing
+### Non-unique Decomposition of distribution(Covariate Shift, Concept Drift and the difference of Model Performance)
 
 - **Nonunique decomposition of Covariate Shift & Concept Drift & Causal Testing for Distribution Shift** — Colab notebook: [Meta Learner as Feature Selection](https://colab.research.google.com/drive/1w5fKyTqnWoKEfixGnpaZCMSzQg0IOr2)
 - **Illustration for the impossibility for decomposing covariate shift & concept drift into individual features** 
