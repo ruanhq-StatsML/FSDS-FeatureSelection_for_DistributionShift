@@ -1,6 +1,6 @@
 # Distribution Shift Feature Selection - Covariate Shift and Concept Drift
 
-This repository implements a comprehensive benchmark for feature selection under distribution shift, covering both covariate shift and concept drift scenarios -
+This repository implements a comprehensive benchmark for feature selection under distribution shift, covering both covariate shift(P(X) shifts) and concept drift(P(Y|X) shifts) scenarios -
 - ***For concept drift, the meta learner*** is leveraged to capture the discrepancy of the conditional mean E[Y|X, T=1](new batch of data) - E[Y|X, T=0], achieved SOTA performance on multiple modalities of datasets.
 - ***For covaraite shift, the RF OOB variable importance along with the LOCO-MMD*** is leveraged with the highly competitive performance in comparison with the current SOTA(fsl-net and datafix), yielding higher computationally effciency.
 
@@ -53,15 +53,15 @@ The benchmark includes the following methods, categorized by their underlying me
 - **`domain_classifier_VIMP_whole.py`**: RF VIMP adapter along with the other domain classifier methods
 - **`fetch_tabular_openml_datasets.py`**: Data preprocessing for 8 OpenML sklearn datasets; results stored in `real_data/tabular/`
 
-### Non-unique Decomposition & Causal Testing
+### Non-unique Decomposition of distribution(Covariate Shift, Concept Drift and the difference of Model Performance)
 
 - **Nonunique decomposition of Covariate Shift & Concept Drift & Causal Testing for Distribution Shift** — Colab notebook: [Meta Learner as Feature Selection](https://colab.research.google.com/drive/1w5fKyTqnWoKEfixGnpaZCMSzQg0IOr2)
 - **Illustration for the impossibility for decomposing covariate shift & concept drift into individual features** 
-- ***HSIC(Covariate Shift)***
+- ***HSIC - Hilbert Schmidt Independence Criterion(Covariate Shift Only)***
 <img width="2873" height="2225" alt="linearCovariateShift_HSIC_Gamma02" src="https://github.com/user-attachments/assets/5be0201c-7157-453c-95f8-971d54d2bf3d" />
-- ***MMD(Covariate Shift)***
+- ***MMD - Maximal Mean Discrepancy(Covariate Shift Only)***
 <img width="2873" height="2225" alt="linearCovariateShift_MMD_Gamma02" src="https://github.com/user-attachments/assets/eaeed113-d43c-4d95-b353-3a30883690a1" />
-- ***R-Risk(Concept Drift)***
+- ***R-Risk(Concept Drift Only)***
 <img width="2873" height="2225" alt="linearConceptDrift_RRisk_deltabeta03" src="https://github.com/user-attachments/assets/9ec4f09f-d7b6-4a44-8fe8-fbff4fc2bef0" />
 
 ### Results
@@ -85,5 +85,6 @@ The following real-world datasets are included with corresponding benchmark scri
 ### Sensitivity Analyses
 
 - **Weak overlap sensitivity analysis**: `weakly_overlapped_benchmark.py`
+<img width="1311" height="1234" alt="feature_selection_overlap_sensitivity_analysis" src="https://github.com/user-attachments/assets/8e816930-d64e-4d0b-a463-39f69f9ea9be" />
 - **Outcome Model Sensitivity Analysis**: `outcome_model_sensitivity.py`
 - **Adversarial perturbations**: `adversarial_conceptdrift.py` — includes 5 types of adversarial perturbations for concept drift robustness testing.
