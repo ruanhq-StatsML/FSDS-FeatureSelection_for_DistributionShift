@@ -346,3 +346,70 @@ return paths_df, summary_df
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+
+DATEDIFF(A.cohort_date,  A.login_date, 'Days') <= 7
+DATE_ADD(A.cohort_date,  A.login_date, 'Days') >= 7
+DATE_ADD(A.cohort_date,  A.login_date, 'Days') <= 7
+DATE_ADD(A.cohort_date,  A.login_date, 'Days') >= 7
+
+'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
