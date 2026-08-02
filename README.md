@@ -58,11 +58,11 @@ The benchmark includes the following methods, categorized by their underlying me
 - **Nonunique decomposition of Covariate Shift & Concept Drift & Causal Testing for Distribution Shift** — Colab notebook: [Meta Learner as Feature Selection](https://colab.research.google.com/drive/1w5fKyTqnWoKEfixGnpaZCMSzQg0IOr2)
 - **Illustration for the impossibility for decomposing covariate shift & concept drift into individual features** 
 **HSIC - Hilbert Schmidt Independence Criterion(Covariate Shift Only)**
-<img width="2873" height="2225" alt="linearCovariateShift_HSIC_Gamma02" src="https://github.com/user-attachments/assets/5be0201c-7157-453c-95f8-971d54d2bf3d" />
+<img width="2573" height="2225" alt="linearCovariateShift_HSIC_Gamma02" src="https://github.com/user-attachments/assets/5be0201c-7157-453c-95f8-971d54d2bf3d" />
 **MMD - Maximal Mean Discrepancy(Covariate Shift Only)**
-<img width="2873" height="2225" alt="linearCovariateShift_MMD_Gamma02" src="https://github.com/user-attachments/assets/eaeed113-d43c-4d95-b353-3a30883690a1" />
+<img width="2573" height="2225" alt="linearCovariateShift_MMD_Gamma02" src="https://github.com/user-attachments/assets/eaeed113-d43c-4d95-b353-3a30883690a1" />
 **R-Risk(Concept Drift Only)**
-<img width="2873" height="2225" alt="linearConceptDrift_RRisk_deltabeta03" src="https://github.com/user-attachments/assets/9ec4f09f-d7b6-4a44-8fe8-fbff4fc2bef0" />
+<img width="2573" height="2225" alt="linearConceptDrift_RRisk_deltabeta03" src="https://github.com/user-attachments/assets/9ec4f09f-d7b6-4a44-8fe8-fbff4fc2bef0" />
 
 ### Results
 
