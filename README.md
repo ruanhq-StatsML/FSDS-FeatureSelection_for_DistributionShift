@@ -89,7 +89,4 @@ The following real-world datasets are included with corresponding benchmark scri
 - **Outcome Model Sensitivity Analysis**: `outcome_model_sensitivity.py`
 - **Adversarial perturbations**: `adversarial_conceptdrift.py` — includes 5 types of adversarial perturbations for concept drift robustness testing.
 
-### Identifiability issue in the Decomposition of Distribution Shift into Individual Feature or Separate Sources
 
-- **For any observed distribution shift or performance drop, disentangle it into separate sources would be impossible, there are infinite number of ways to replicate this distribution shift or this degree of the performance degradation** The mean shift + epsilon shift(data quality degradation) can mimic(with 50 bootstrap resamples and the confidence interval is established) the degree of the performance degradation like that from the concept drift.
-<img width="1796" height="552" alt="Screenshot 2026-08-03 at 09 57 54" src="https://github.com/user-attachments/assets/bd74444f-992d-4928-ac54-df080e397cf7" />
