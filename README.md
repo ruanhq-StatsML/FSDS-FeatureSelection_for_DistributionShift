@@ -38,8 +38,8 @@ The benchmark includes the following methods, categorized by their underlying me
 - **RF-domain: OOB-VIMP** for Random Forest classifier (XGBoost, MLP, and Kernel Ridge Regression are also leveraged)
 
 ### Additional Domain Classifier Methods
-- **Boruta** (Covariate Shift Only)
-- **ShadowVIMP** (Covariate Shift Only)
+- **Boruta** (Covariate Shift Only, https://www.jstatsoft.org/article/view/v036i11)
+- **ShadowVIMP** (Covariate Shift Only, https://github.com/cran/shadowVIMP)
 - **Vita PIMP** (Permutation Variable Importance)
 
 ## Repository Structure
