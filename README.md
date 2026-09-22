@@ -4,9 +4,20 @@ This repository implements a comprehensive benchmark for feature selection under
 - ***For concept drift, the meta learner*** is leveraged to capture the discrepancy of the conditional mean E[Y|X, T=1](new batch of data) - E[Y|X, T=0], achieved SOTA performance on multiple modalities of datasets.
 - ***For covaraite shift, the RF OOB variable importance along with the LOCO-MMD*** is leveraged with the highly competitive performance in comparison with the current SOTA(fsl-net and datafix), yielding higher computationally effciency.
 
-*** It can be adapted and applied to a wide variety of real-world use cases, including but not limited to the following:
-- Fraud Detection Scenario: Identified the cluster of fraudsters that have collaborative fraud behaviors - how to understand the fundamental difference between this cluster of users with the other user subset? We leverage the spatial-temporal clustering method(ST-DBSCAN) to perform the clustering with the CFPerm & FSDS methodology run on this subset of the users versus itself in the previous batch as well as with those who are not conducting fraudulent behaviors. 
-- The Multi-Modal Attribution is another very promising scenario to showcase the power of our statistical methodology - especially under the circumstance where the distance and the difference are primarily coming from the cross-modal interactions. The FSDS procedure followed by the recently adapted post-hoc subset localization procedure is adapted to conduct the next multi-granularity attribution in different levels including but not limited to image patch, token, sentence and the video frames. 
+## It can be adapted and applied to a wide variety of real-world use cases, including but not limited to the following:
+- ***Fraud Detection Scenario: Cluster-Level Attribution with ST-DBSCAN***
+  We first identify a cluster of fraudsters exhibiting collaborative fraudulent behavior. The central question then becomes: what fundamentally distinguishes this cluster of users from the rest of the user population? To answer this, we adopt a spatial-temporal clustering approach (ST-DBSCAN) to isolate the fraud cluster, and then apply our CFPerm and FSDS methodology along two complementary axes:
+  -- Temporal self-comparison: the fraud cluster in the current batch versus the same cluster in the previous batch — capturing how the cluster's behavior evolves over time.
+  -- Population contrast: the fraud cluster versus the non-fraudulent user subset — capturing what makes the cluster structurally and behaviorally distinct.
+  This dual-axis comparison allows us to disentangle within-cluster drift (the fraudsters adapting their tactics) from between-group separation (the intrinsic signature of collaborative fraud), yielding interpretable, feature-level attribution of what drives the difference.
+
+- ***Multi-Modal Attribution: A Cross-Modal Interaction Scenario***
+  Multi-modal attribution represents another highly promising scenario that showcases the power of our statistical methodology — particularly in settings where the distance and the difference are primarily driven by cross-modal interactions rather than by any single modality in isolation. To handle this, we adapt the FSDS procedure, followed by the recently developed post-hoc subset localization procedure, to perform multi-granularity attribution across different levels, including but not limited to image patches, tokens, sentences, and video frames. The accompanying diagram illustrates the brief procedure for the multi-modal attribution use case.
+
+
+<img width="3172" height="2402" alt="MultiModalAttribution_ProductionLanding" src="https://github.com/user-attachments/assets/09e12617-816c-41b9-ad81-6867d5bc9f66" />
+
+
 
 ## Benchmark Methods
 
