@@ -4,6 +4,10 @@ This repository implements a comprehensive benchmark for feature selection under
 - ***For concept drift, the meta learner*** is leveraged to capture the discrepancy of the conditional mean E[Y|X, T=1](new batch of data) - E[Y|X, T=0], achieved SOTA performance on multiple modalities of datasets.
 - ***For covaraite shift, the RF OOB variable importance along with the LOCO-MMD*** is leveraged with the highly competitive performance in comparison with the current SOTA(fsl-net and datafix), yielding higher computationally effciency.
 
+*** It can be adapted and applied to a wide variety of real-world use cases, including but not limited to the following:
+- Fraud Detection Scenario: Identified the cluster of fraudsters that have collaborative fraud behaviors - how to understand the fundamental difference between this cluster of users with the other user subset? We leverage the spatial-temporal clustering method(ST-DBSCAN) to perform the clustering with the CFPerm & FSDS methodology run on this subset of the users versus itself in the previous batch as well as with those who are not conducting fraudulent behaviors. 
+- The Multi-Modal Attribution is another very promising scenario to showcase the power of our statistical methodology - especially under the circumstance where the distance and the difference are primarily coming from the cross-modal interactions. The FSDS procedure followed by the recently adapted post-hoc subset localization procedure is adapted to conduct the next multi-granularity attribution in different levels including but not limited to image patch, token, sentence and the video frames. 
+
 ## Benchmark Methods
 
 The benchmark includes the following methods, categorized by their underlying methodology:
