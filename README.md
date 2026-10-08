@@ -104,4 +104,8 @@ The following real-world datasets are included with corresponding benchmark scri
 - **Outcome Model Sensitivity Analysis**: `outcome_model_sensitivity.py`
 - **Adversarial perturbations**: `adversarial_conceptdrift.py` — includes 5 types of adversarial perturbations for concept drift robustness testing.
 
+### Adapting to the multi-block aggregation procedure 
 
+- **The alignment of the feature selection consistency between the individual blocks and the global VIMP for distribution shift comparisons - horizontal federation**
+- **The alignment of the feature selection consistency between the individual features importance and the global VIMP for the predictive performance - horizontal federation**
+- **Justified the potential practical value for this procedure with applications to the aggregated federated learning regime**
