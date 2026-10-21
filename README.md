@@ -1,4 +1,4 @@
-# Distribution Shift Feature Selection - Covariate Shift and Concept Drift
+# Feature Selection for Distribution Shift(FSDS) - Covariate Shift and Concept Drift
 
 This repository implements a comprehensive benchmark for feature selection under distribution shift, covering both covariate shift(P(X) shifts) and concept drift(P(Y|X) shifts) scenarios -
 - ***For concept drift, the meta learner*** is leveraged to capture the discrepancy of the conditional mean E[Y|X, T=1](new batch of data) - E[Y|X, T=0], achieved SOTA performance on multiple modalities of datasets.
