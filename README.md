@@ -14,8 +14,19 @@ This repository implements a comprehensive benchmark for feature selection under
 - ***Multi-Modal Attribution: A Cross-Modal Interaction Scenario***
   Multi-modal attribution represents another highly promising scenario that showcases the power of our statistical methodology — particularly in settings where the distance and the difference are primarily driven by cross-modal interactions rather than by any single modality in isolation. To handle this, we adapt the FSDS procedure, followed by the recently developed post-hoc subset localization procedure, to perform multi-granularity attribution across different levels, including but not limited to image patches, tokens, sentences, and video frames. The accompanying diagram illustrates the brief procedure for the multi-modal attribution use case.
 
+  <img width="3172" height="2402" alt="MultiModalAttribution_ProductionLanding" src="https://github.com/user-attachments/assets/09e12617-816c-41b9-ad81-6867d5bc9f66" />
 
-<img width="3172" height="2402" alt="MultiModalAttribution_ProductionLanding" src="https://github.com/user-attachments/assets/09e12617-816c-41b9-ad81-6867d5bc9f66" />
+
+- ***Application to RNA-seq Dataset***
+  Adapted this procedure to the sgle-cell RNA-seq da
+  ~ Pseudo-time inference procedure via the online distribution shift detection procedures. 
+  ~ Feature selection for Distribution Shift - with the biomarker identifications.
+  The FSDS method demonstrated superior feature selection efficiency in comparison to the existing methods.
+  
+<img width="1514" height="848" alt="Screenshot 2026-10-21 at 13 47 49" src="https://github.com/user-attachments/assets/15b3bf6a-bd07-4f6d-b23f-bece19f7c6d5" />
+<img width="1524" height="852" alt="Screenshot 2026-10-21 at 13 47 43" src="https://github.com/user-attachments/assets/38997f2e-2671-4e72-98cb-f74fe385814a" />
+
+
 
 
 
