@@ -1,5 +1,6 @@
 """
-Ultra-high-dimensional (p / n >= 20) benchmark of feature-selection methods for distribution shift.
+Ultra-high-dimensional (p / n >= 20) benchmark of feature-selection methods for distribution shift,
+targeted at high-dimensional financial-factor / characteristic panels.
 
 Setting
 -------
@@ -8,8 +9,12 @@ Outcome model everywhere an outcome / nuisance regression is needed: random fore
 
 Grid
 ----
-By default the grid is `np.linspace(0, 0.95, 20)` over the AR(1) feature correlation `rho`
-(`--grid_param rho`); the shift is sparse (`--n_shift` shifted features, default 20).
+By default the grid is `np.linspace(0, 0.95, 20)` over `rho` (`--grid_param rho`); the shift is
+sparse (`--n_shift` shifted features, default 20). Two designs for X (`--design`):
+  factor (default): approximate factor model  X = sqrt(rho) * F @ L' + sqrt(1 - rho) * E  with K latent
+                    factors, i.e. rho is the share of each characteristic's variance driven by common
+                    factors (the usual "factor strength" of a factor-zoo panel). Heavy-tailed (t5) returns noise.
+  ar1:              AR(1) correlation rho between neighbouring features, Gaussian noise.
 `--grid_param prop` instead sweeps the *proportion* of shifted features over the same grid
 (rho fixed by `--rho`); the 0.0 grid point is then a no-shift null.
 
@@ -25,8 +30,11 @@ O(p) forest fits and infeasible at p = 10,000)
   `--n_neighbors` most correlated other features instead of a forest on all p-1 features.
 * SGShift L1 (specified / misspecified): same objective as SGShift.py (offset from a source RF,
   L1 penalty on delta, BIC over a lambda path) solved with coordinate descent instead of SCS.
-  The knockoff variant, DRPerm, FSLNet and DataFix are not run (Gaussian knockoffs are infeasible
-  at p >> n and the other modules are not available in the repository).
+* DataFix (DF-Locate, RF estimator) and FSL-Net (pretrained) are the upstream packages
+  (github.com/AI-sandbox/DataFix, github.com/AI-sandbox/FSL-Net).
+Not run: the knockoff variant (Gaussian knockoffs are infeasible at p >> n). The default method set
+(`--methods`) is the compact one: rf_domain, rfdom_condperm, permucate, loco_r_risk, sgshift_l1_*,
+datafix, fslnet; the other implemented methods can be switched on through `--methods`.
 
 Usage
 -----
@@ -70,16 +78,30 @@ def ar1_design(n, p, rho, rng):
     return X
 
 
-def make_pair(n, p, rho, n_shift, seed, n_signal=10, noise=0.5, n_prop=None):
+def factor_design(n, p, rho, loadings, rng):
+    F = rng.standard_normal((n, loadings.shape[1]))
+    E = rng.standard_normal((n, p))
+    return np.sqrt(rho) * (F @ loadings.T) + np.sqrt(1.0 - rho) * E
+
+
+def make_pair(n, p, rho, n_shift, seed, n_signal=10, noise=0.5, n_prop=None, design="factor", n_factors=10):
     """Existing / new batch with a shared sparse linear mechanism and a nonlinear shift injected on
     the new batch (`synthetic_injection_nonlinear_interaction`). Returns df1_X, df1_Y, df2_X, df2_Y, shifted."""
     rng = np.random.default_rng(seed)
     beta = np.zeros(p)
     beta[rng.choice(p, size=n_signal, replace=False)] = rng.uniform(0.5, 1.5, size=n_signal)
-    X1 = ar1_design(n, p, rho, rng)
-    X2 = ar1_design(n, p, rho, rng)
-    Y1 = X1 @ beta + noise * rng.standard_normal(n)
-    Y2 = X2 @ beta + noise * rng.standard_normal(n)
+    if design == "factor":
+        L = rng.standard_normal((p, n_factors))
+        L /= np.linalg.norm(L, axis=1, keepdims=True)
+        X1 = factor_design(n, p, rho, L, rng)
+        X2 = factor_design(n, p, rho, L, rng)
+        draw = lambda m: noise * rng.standard_t(5, size=m) / np.sqrt(5.0 / 3.0)  # noqa: E731
+    else:
+        X1 = ar1_design(n, p, rho, rng)
+        X2 = ar1_design(n, p, rho, rng)
+        draw = lambda m: noise * rng.standard_normal(m)  # noqa: E731
+    Y1 = X1 @ beta + draw(n)
+    Y2 = X2 @ beta + draw(n)
     if n_shift <= 0:
         return X1, Y1, X2, Y2, np.array([], dtype=int)
     prop = (n_shift / p) if n_prop is None else n_prop
@@ -449,6 +471,36 @@ def sgshift_l1(X1, Y1, X2, Y2, seed, lambdas=None):
 
 
 # ----------------------------------------------------------------------------------------------
+# DataFix (DF-Locate) and FSL-Net
+# ----------------------------------------------------------------------------------------------
+
+
+def datafix_locate(X1, X2, seed):
+    from datafix import DFLocate
+
+    n = len(X1) + len(X2)
+    loc = DFLocate(
+        estimator=RandomForestClassifier(
+            max_depth=5, n_estimators=150, min_samples_leaf=max(1, round(np.sqrt(n) // 2)),
+            max_features="sqrt", random_state=seed,
+        ),
+        cv=5, test_size=None, random_state=seed, verbose=False, n_jobs=N_JOBS,
+    )
+    loc.shift_location(X1, X2)
+    return np.asarray(loc.importances_, dtype=float).ravel(), np.asarray(loc.mask_, dtype=int).ravel()
+
+
+def fslnet_locate(X1, X2):
+    import torch
+    from fslnet.fslnet import FSLNet
+
+    model = FSLNet.from_pretrained(device="cpu")
+    with torch.no_grad():
+        prob, _ = model(torch.tensor(X1, dtype=torch.float32), torch.tensor(X2, dtype=torch.float32))
+    return prob.detach().cpu().numpy().ravel()
+
+
+# ----------------------------------------------------------------------------------------------
 # One replicate
 # ----------------------------------------------------------------------------------------------
 
@@ -469,12 +521,23 @@ def build_pool(screens, size):
     return np.array(sorted(pool), dtype=int)
 
 
+DEFAULT_METHODS = ["rf_domain", "rfdom_condperm", "permucate", "loco_r_risk",
+                   "sgshift_l1_spec", "sgshift_l1_misspec", "datafix", "fslnet"]
+ALL_METHODS = DEFAULT_METHODS + ["rfdom_shadowVIMP", "rfdom_vitaPIMP", "rfdom_boruta", "rfdom_loco",
+                                 "delta_shap", "loco_mmd", "loco_hsic", "grf"]
+
+
 def run_one(X1, Y1, X2, Y2, shifted, args, seed, pool_size):
     p = X1.shape[1]
     X = np.vstack([X1, X2]).astype(np.float32)
     Y = np.concatenate([Y1, Y2])
     W = np.concatenate([np.zeros(len(X1)), np.ones(len(X2))]).astype(int)
-    scores, times, errors = {}, {}, {}
+    X1f, X2f = X1.astype(np.float32), X2.astype(np.float32)
+    methods = set(args.methods)
+    scores, times, errors, native = {}, {}, {}, {}
+
+    def want(*names):
+        return any(n in methods for n in names)
 
     def timed(name, fn):
         t0 = time.perf_counter()
@@ -487,68 +550,85 @@ def run_one(X1, Y1, X2, Y2, shifted, args, seed, pool_size):
         times[name] = time.perf_counter() - t0
         return out
 
-    X1f, X2f = X1.astype(np.float32), X2.astype(np.float32)
-
+    # cheap screens (always computed: they define the candidate pool of the refit-based methods)
+    screens = {}
     imp = timed("rf_domain", lambda: rf_domain_importance(X, W, seed))
     if imp is not None:
-        scores["rf_domain"] = imp
-    out = timed("loco_mmd_hsic", lambda: loco_mmd_hsic(X1, X2, seed + 8, max_n=args.max_mmd_n))
-    if out is not None:
-        scores["loco_mmd"], scores["loco_hsic"] = out
-        times["loco_hsic"] = times["loco_mmd"] = times.pop("loco_mmd_hsic") / 2.0
+        screens["rf_domain"] = imp
     out = timed("sgshift_l1", lambda: sgshift_l1(X1f, Y1, X2f, Y2, seed + 10))
     if out is not None:
-        scores["sgshift_l1_spec"], scores["sgshift_l1_misspec"] = out
+        screens["sgshift_l1_spec"], screens["sgshift_l1_misspec"] = out
         times["sgshift_l1_spec"] = times["sgshift_l1_misspec"] = times.pop("sgshift_l1") / 2.0
+    if "loco_mmd" in methods or "loco_hsic" in methods:
+        out = timed("loco_mmd_hsic", lambda: loco_mmd_hsic(X1, X2, seed + 8, max_n=args.max_mmd_n))
+        if out is not None:
+            screens["loco_mmd"], screens["loco_hsic"] = out
+            times["loco_hsic"] = times["loco_mmd"] = times.pop("loco_mmd_hsic") / 2.0
+    for m, sc in screens.items():
+        if m in methods:
+            scores[m] = sc
 
     fit = timed("nuisance", lambda: permucate_fit(X, Y, W, seed, args.n_estimators))
     pool = None
     if fit is not None:
-        screens = [fit["tau"].feature_importances_]
-        for key in ("rf_domain", "loco_hsic", "sgshift_l1_spec"):
-            if key in scores:
-                screens.append(scores[key])
-        pool = build_pool(screens, pool_size)
+        pool_screens = [fit["tau"].feature_importances_] + [screens[k] for k in
+                                                           ("rf_domain", "sgshift_l1_spec") if k in screens]
+        pool = build_pool(pool_screens, pool_size)
     pool_recall = float(np.mean(np.isin(shifted, pool))) if (pool is not None and len(shifted)) else np.nan
 
-    v = timed("rfdom_shadowVIMP", lambda: rfdom_shadow(X, W, seed + 1))
-    if v is not None:
-        scores["rfdom_shadowVIMP"] = v
-    v = timed("rfdom_vitaPIMP", lambda: rfdom_pimp(X, W, seed + 2, n_null=args.n_null))
-    if v is not None:
-        scores["rfdom_vitaPIMP"] = v
-    v = timed("rfdom_boruta", lambda: rfdom_boruta(X, W, seed + 3, n_iter=args.boruta_iter))
-    if v is not None:
-        scores["rfdom_boruta"] = v
+    for name, fn in [
+        ("rfdom_shadowVIMP", lambda: rfdom_shadow(X, W, seed + 1)),
+        ("rfdom_vitaPIMP", lambda: rfdom_pimp(X, W, seed + 2, n_null=args.n_null)),
+        ("rfdom_boruta", lambda: rfdom_boruta(X, W, seed + 3, n_iter=args.boruta_iter)),
+        ("delta_shap", lambda: delta_shap(X1f, Y1, X2f, Y2, seed + 7)),
+        ("grf", lambda: causal_forest_vimp(X, Y, W, seed + 9, args.n_estimators)),
+    ]:
+        if name in methods:
+            v = timed(name, fn)
+            if v is not None:
+                scores[name] = v
 
     if pool is not None:
-        out = timed(
-            "rfdom_condperm_loco",
-            lambda: rfdom_condperm_loco(X, W, pool, seed + 4, args.n_perm, args.n_neighbors, args.n_estimators),
-        )
+        if want("rfdom_condperm", "rfdom_loco"):
+            out = timed(
+                "rfdom_condperm_loco",
+                lambda: rfdom_condperm_loco(X, W, pool, seed + 4, args.n_perm, args.n_neighbors, args.n_estimators),
+            )
+            if out is not None:
+                cond, loco, t_loco = out
+                if "rfdom_condperm" in methods:
+                    scores["rfdom_condperm"] = pool_scores(cond, pool, p)
+                if "rfdom_loco" in methods:
+                    scores["rfdom_loco"] = pool_scores(loco, pool, p)
+                times["rfdom_loco"] = t_loco
+                times["rfdom_condperm"] = times.pop("rfdom_condperm_loco") - t_loco
+        if "permucate" in methods:
+            v = timed("permucate", lambda: permucate_vimp(fit, pool, seed + 5, args.n_perm, args.n_neighbors))
+            if v is not None:
+                scores["permucate"] = pool_scores(v, pool, p)
+        if "loco_r_risk" in methods:
+            v = timed("loco_r_risk", lambda: loco_r_risk(X, Y, W, pool, seed + 6, args.loco_trees))
+            if v is not None:
+                scores["loco_r_risk"] = pool_scores(v, pool, p)
+
+    if "datafix" in methods:
+        out = timed("datafix", lambda: datafix_locate(X1f, X2f, seed + 11))
         if out is not None:
-            cond, loco, t_loco = out
-            scores["rfdom_condperm"] = pool_scores(cond, pool, p)
-            scores["rfdom_loco"] = pool_scores(loco, pool, p)
-            times["rfdom_loco"] = t_loco
-            times["rfdom_condperm"] = times.pop("rfdom_condperm_loco") - t_loco
-
-        v = timed("permucate", lambda: permucate_vimp(fit, pool, seed + 5, args.n_perm, args.n_neighbors))
+            scores["datafix"] = out[0]
+            native["datafix"] = np.flatnonzero(out[1] == 1)
+    if "fslnet" in methods:
+        v = timed("fslnet", lambda: fslnet_locate(X1f, X2f))
         if v is not None:
-            scores["permucate"] = pool_scores(v, pool, p)
-        v = timed("loco_r_risk", lambda: loco_r_risk(X, Y, W, pool, seed + 6, args.loco_trees))
-        if v is not None:
-            scores["loco_r_risk"] = pool_scores(v, pool, p)
-
-    v = timed("delta_shap", lambda: delta_shap(X1f, Y1, X2f, Y2, seed + 7))
-    if v is not None:
-        scores["delta_shap"] = v
-    v = timed("grf", lambda: causal_forest_vimp(X, Y, W, seed + 9, args.n_estimators))
-    if v is not None:
-        scores["grf"] = v
+            scores["fslnet"] = v
+            native["fslnet"] = np.flatnonzero(v > 0.5)
 
     times.pop("nuisance", None)
     metrics = {m: metrics_from_scores(s, shifted, p) for m, s in scores.items()}
+    for m, sel in native.items():
+        tp = len(set(sel.tolist()) & set(shifted.tolist()))
+        metrics[m].update({"native_n_selected": len(sel), "native_TP": tp,
+                           "native_precision": tp / len(sel) if len(sel) else 0.0,
+                           "native_recall": tp / max(1, len(shifted))})
     return scores, metrics, times, errors, pool_recall, (pool if pool is not None else np.array([], dtype=int))
 
 
@@ -561,6 +641,9 @@ def parse_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=500, help="n_exist = n_new")
     ap.add_argument("--p_over_n", type=float, default=20.0, help="p / n (>= 20 for the ultra-high-dim regime)")
+    ap.add_argument("--design", choices=["factor", "ar1"], default="factor")
+    ap.add_argument("--n_factors", type=int, default=10)
+    ap.add_argument("--methods", nargs="+", default=DEFAULT_METHODS, choices=ALL_METHODS)
     ap.add_argument("--grid_param", choices=["rho", "prop"], default="rho")
     ap.add_argument("--grid_len", type=int, default=20)
     ap.add_argument("--grid_max", type=float, default=0.95)
@@ -608,7 +691,8 @@ def main():
                 rho, n_prop = args.rho, g
                 n_shift = int(round(p * g))
             t0 = time.perf_counter()
-            X1, Y1, X2, Y2, shifted = make_pair(args.n, p, rho, n_shift, seed, n_prop=n_prop)
+            X1, Y1, X2, Y2, shifted = make_pair(args.n, p, rho, n_shift, seed, n_prop=n_prop,
+                                              design=args.design, n_factors=args.n_factors)
             print(f"[rep {rep} grid {gi}/{len(grid) - 1}] {args.grid_param}={g:.4f} rho={rho:.3f} "
                   f"#shifted={len(shifted)}", flush=True)
             scores, metrics, times, errors, pool_recall, pool = run_one(X1, Y1, X2, Y2, shifted, args, seed, args.pool)
