@@ -1,0 +1,154 @@
+n=500 per batch, p=10000 (p/n=20), methods=['rf_domain', 'permucate', 'loco_r_risk', 'sgshift_l1_spec', 'sgshift_l1_misspec', 'datafix', 'fslnet']
+[rep 0 grid 0/19] rho=0.000 #shifted=1000 (data 0s)
+    rf_domain: 3s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 14s
+    datafix: 320s
+--> FSLNet loaded and set to eval().
+    fslnet: 30s
+  done in 416s | AUC rf_domain:0.74, permucate:0.51, loco_r_risk:0.51, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.52, datafix:0.75, fslnet:0.75
+[rep 0 grid 1/19] rho=0.050 #shifted=1000 (data 0s)
+    rf_domain: 3s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 13s
+    datafix: 333s
+    fslnet: 30s
+  done in 428s | AUC rf_domain:0.72, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.51, datafix:0.74, fslnet:0.75
+[rep 0 grid 2/19] rho=0.100 #shifted=1000 (data 0s)
+    rf_domain: 3s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 17s
+    datafix: 332s
+    fslnet: 29s
+  done in 430s | AUC rf_domain:0.73, permucate:0.50, loco_r_risk:0.49, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.51, datafix:0.75, fslnet:0.76
+[rep 0 grid 3/19] rho=0.150 #shifted=1000 (data 0s)
+    rf_domain: 3s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 15s
+    datafix: 343s
+    fslnet: 30s
+  done in 439s | AUC rf_domain:0.72, permucate:0.50, loco_r_risk:0.48, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.52, datafix:0.74, fslnet:0.74
+[rep 0 grid 4/19] rho=0.200 #shifted=1000 (data 0s)
+    rf_domain: 3s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 12s
+    datafix: 339s
+    fslnet: 29s
+  done in 432s | AUC rf_domain:0.72, permucate:0.49, loco_r_risk:0.49, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.52, datafix:0.74, fslnet:0.73
+[rep 0 grid 5/19] rho=0.250 #shifted=1000 (data 0s)
+    rf_domain: 3s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 22s
+    datafix: 338s
+    fslnet: 29s
+  done in 441s | AUC rf_domain:0.71, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.52, datafix:0.73, fslnet:0.73
+[rep 0 grid 7/19] rho=0.350 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 21s
+    datafix: 383s
+    fslnet: 30s
+  done in 485s | AUC rf_domain:0.73, permucate:0.51, loco_r_risk:0.50, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.52, datafix:0.75, fslnet:0.76
+[rep 0 grid 8/19] rho=0.400 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 21s
+    datafix: 382s
+    fslnet: 52s
+  done in 507s | AUC rf_domain:0.74, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.51, datafix:0.76, fslnet:0.77
+[rep 0 grid 9/19] rho=0.450 #shifted=1000 (data 0s)
+    rf_domain: 3s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 22s
+    datafix: 382s
+    fslnet: 30s
+  done in 486s | AUC rf_domain:0.73, permucate:0.51, loco_r_risk:0.50, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.52, datafix:0.74, fslnet:0.75
+[rep 0 grid 10/19] rho=0.500 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 41s
+    sgshift_l1: 21s
+    datafix: 383s
+    fslnet: 64s
+  done in 518s | AUC rf_domain:0.73, permucate:0.52, loco_r_risk:0.51, sgshift_l1_spec:0.54, sgshift_l1_misspec:0.52, datafix:0.74, fslnet:0.73
+[rep 0 grid 11/19] rho=0.550 #shifted=1000 (data 0s)
+    rf_domain: 3s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 27s
+    datafix: 355s
+    fslnet: 31s
+  done in 465s | AUC rf_domain:0.73, permucate:0.51, loco_r_risk:0.50, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.52, datafix:0.74, fslnet:0.75
+[rep 0 grid 12/19] rho=0.600 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 8s
+    loco_r_risk: 43s
+    sgshift_l1: 23s
+    datafix: 383s
+    fslnet: 57s
+  done in 517s | AUC rf_domain:0.74, permucate:0.51, loco_r_risk:0.50, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.52, datafix:0.75, fslnet:0.76
+[rep 0 grid 13/19] rho=0.650 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 23s
+    datafix: 377s
+    fslnet: 30s
+  done in 481s | AUC rf_domain:0.73, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.54, sgshift_l1_misspec:0.53, datafix:0.74, fslnet:0.75
+[rep 0 grid 14/19] rho=0.700 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 22s
+    datafix: 393s
+    fslnet: 29s
+  done in 497s | AUC rf_domain:0.73, permucate:0.51, loco_r_risk:0.51, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.52, datafix:0.75, fslnet:0.76
+[rep 0 grid 15/19] rho=0.750 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 25s
+    datafix: 361s
+    fslnet: 29s
+  done in 467s | AUC rf_domain:0.73, permucate:0.51, loco_r_risk:0.48, sgshift_l1_spec:0.54, sgshift_l1_misspec:0.52, datafix:0.74, fslnet:0.76
+[rep 0 grid 16/19] rho=0.800 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 23s
+    datafix: 361s
+    fslnet: 34s
+  done in 470s | AUC rf_domain:0.73, permucate:0.51, loco_r_risk:0.49, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.52, datafix:0.74, fslnet:0.74
+[rep 0 grid 17/19] rho=0.850 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 23s
+    datafix: 370s
+    fslnet: 31s
+  done in 475s | AUC rf_domain:0.74, permucate:0.50, loco_r_risk:0.49, sgshift_l1_spec:0.53, sgshift_l1_misspec:0.52, datafix:0.74, fslnet:0.75
+[rep 0 grid 18/19] rho=0.900 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 41s
+    sgshift_l1: 23s
+    datafix: 410s
+    fslnet: 29s
+  done in 513s | AUC rf_domain:0.72, permucate:0.50, loco_r_risk:0.49, sgshift_l1_spec:0.55, sgshift_l1_misspec:0.52, datafix:0.73, fslnet:0.75
+[rep 0 grid 19/19] rho=0.950 #shifted=1000 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 41s
+    sgshift_l1: 27s
+    datafix: 368s
+    fslnet: 29s
+  done in 475s | AUC rf_domain:0.72, permucate:0.52, loco_r_risk:0.51, sgshift_l1_spec:0.54, sgshift_l1_misspec:0.53, datafix:0.72, fslnet:0.72

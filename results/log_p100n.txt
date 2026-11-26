@@ -1,0 +1,145 @@
+n=500 per batch, p=50000 (p/n=100), methods=['rf_domain', 'permucate', 'loco_r_risk', 'sgshift_l1_spec', 'sgshift_l1_misspec', 'datafix', 'fslnet']
+[rep 0 grid 0/19] rho=0.000 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 207s
+    sgshift_l1: 237s
+    datafix: 2128s
+--> FSLNet loaded and set to eval().
+    fslnet: 143s
+  done in 2734s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, datafix:0.74, fslnet:0.75
+[rep 0 grid 1/19] rho=0.050 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 206s
+    sgshift_l1: 157s
+    fslnet: 141s
+  done in 522s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.49, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.50, fslnet:0.75
+[rep 0 grid 2/19] rho=0.100 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 10s
+    loco_r_risk: 206s
+    sgshift_l1: 168s
+    fslnet: 142s
+  done in 533s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, fslnet:0.75
+[rep 0 grid 3/19] rho=0.150 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 207s
+    sgshift_l1: 91s
+    fslnet: 147s
+  done in 464s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.51, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, fslnet:0.74
+[rep 0 grid 4/19] rho=0.200 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 207s
+    sgshift_l1: 159s
+    fslnet: 143s
+  done in 526s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.51, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.51, fslnet:0.75
+[rep 0 grid 5/19] rho=0.250 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 208s
+    sgshift_l1: 251s
+    fslnet: 143s
+  done in 621s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.49, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, fslnet:0.74
+[rep 0 grid 6/19] rho=0.300 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 207s
+    sgshift_l1: 193s
+    fslnet: 144s
+  done in 563s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, fslnet:0.74
+[rep 0 grid 7/19] rho=0.350 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 208s
+    sgshift_l1: 243s
+    fslnet: 160s
+  done in 629s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, fslnet:0.74
+[rep 0 grid 8/19] rho=0.400 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 209s
+    sgshift_l1: 193s
+    fslnet: 142s
+  done in 562s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.51, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, fslnet:0.75
+[rep 0 grid 9/19] rho=0.450 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 10s
+    loco_r_risk: 207s
+    sgshift_l1: 121s
+    datafix: 2191s
+    fslnet: 145s
+  done in 2681s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.49, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, datafix:0.74, fslnet:0.75
+[rep 0 grid 10/19] rho=0.500 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 207s
+    sgshift_l1: 204s
+    fslnet: 143s
+  done in 572s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, fslnet:0.74
+[rep 0 grid 11/19] rho=0.550 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 206s
+    sgshift_l1: 209s
+    fslnet: 148s
+  done in 581s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.49, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.51, fslnet:0.75
+[rep 0 grid 12/19] rho=0.600 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 206s
+    sgshift_l1: 183s
+    fslnet: 143s
+  done in 551s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.51, fslnet:0.75
+[rep 0 grid 13/19] rho=0.650 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 206s
+    sgshift_l1: 204s
+    fslnet: 144s
+  done in 572s | AUC rf_domain:0.62, permucate:0.51, loco_r_risk:0.49, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, fslnet:0.74
+[rep 0 grid 14/19] rho=0.700 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 207s
+    sgshift_l1: 227s
+    fslnet: 143s
+  done in 595s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.47, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, fslnet:0.76
+[rep 0 grid 15/19] rho=0.750 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 206s
+    sgshift_l1: 255s
+    fslnet: 142s
+  done in 622s | AUC rf_domain:0.62, permucate:0.50, loco_r_risk:0.48, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.51, fslnet:0.75
+[rep 0 grid 16/19] rho=0.800 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 208s
+    sgshift_l1: 238s
+    fslnet: 145s
+  done in 609s | AUC rf_domain:0.63, permucate:0.50, loco_r_risk:0.49, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.51, fslnet:0.74
+[rep 0 grid 17/19] rho=0.850 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 209s
+    sgshift_l1: 235s
+    fslnet: 145s
+  done in 607s | AUC rf_domain:0.63, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.51, fslnet:0.75
+[rep 0 grid 18/19] rho=0.900 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 11s
+    loco_r_risk: 207s
+    sgshift_l1: 217s
+    datafix: 2575s
+    fslnet: 142s
+  done in 3160s | AUC rf_domain:0.63, permucate:0.50, loco_r_risk:0.50, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.51, datafix:0.74, fslnet:0.75
+[rep 0 grid 19/19] rho=0.950 #shifted=5000 (data 2s)
+    rf_domain: 5s
+    permucate: 10s
+    loco_r_risk: 206s
+    sgshift_l1: 223s
+    fslnet: 144s
+  done in 591s | AUC rf_domain:0.63, permucate:0.50, loco_r_risk:0.49, sgshift_l1_spec:0.52, sgshift_l1_misspec:0.51, fslnet:0.75
