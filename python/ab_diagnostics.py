@@ -18,7 +18,7 @@ from typing import Dict, Optional, Sequence
 
 import numpy as np
 from scipy import stats
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
 
@@ -262,6 +262,160 @@ def modality_shift_decomposition(
         interaction=interaction,
         p_joint=_p(full),
         p_lomi={j: _p(frozenset([j])) for j in names},
+    )
+
+
+def _domain_model(model, seed):
+    if model == "hgb":
+        return HistGradientBoostingClassifier(
+            max_iter=200, learning_rate=0.05, early_stopping=True, random_state=seed
+        )
+    if model == "rf":
+        return RandomForestClassifier(
+            n_estimators=300, min_samples_leaf=20, max_features="sqrt", n_jobs=-1, random_state=seed
+        )
+    raise ValueError(f"unknown model: {model}")
+
+
+def _crossfit_logloss(X, W, folds, model, seed, clip):
+    out = np.zeros(len(W))
+    for k, (tr, te) in enumerate(folds):
+        p = _domain_model(model, seed + k).fit(X[tr], W[tr]).predict_proba(X[te])[:, 1]
+        p = np.clip(p, clip, 1 - clip)
+        out[te] = -(W[te] * np.log(p) + (1 - W[te]) * np.log(1 - p))
+    return out
+
+
+@dataclass
+class ModalityInfoDecomposition:
+    """Each entry is (estimate, standard error), in nats of I(W; X_S)."""
+
+    value: Dict[frozenset, tuple]
+    lomi: Dict[str, tuple]
+    lomo: Dict[str, tuple]
+    shapley: Dict[str, tuple]
+    order_range: Dict[str, tuple]
+    interaction: Dict[frozenset, tuple]
+    z_crit: float
+
+    def _sig(self, est_se):
+        est, se = est_se
+        return est > self.z_crit * se
+
+    def pattern(self, name):
+        """unique / redundant / synergistic / none, from one-sided z-tests on (LOMI, LOMO)."""
+        alone, drop = self._sig(self.lomi[name]), self._sig(self.lomo[name])
+        if alone and drop:
+            return "unique"
+        if alone:
+            return "redundant"
+        if drop:
+            return "synergistic"
+        return "none"
+
+
+def modality_info_decomposition(
+    X_ref,
+    X_new,
+    blocks: Dict[str, Sequence[int]],
+    model="hgb",
+    n_folds=5,
+    n_null=1,
+    n_repeats=3,
+    clip=1e-3,
+    z_crit=2.0,
+    seed=0,
+):
+    """Monotone modality decomposition: v(S) = I(W; X_S), W = batch label.
+
+    v(S) is estimated as constant-predictor log-loss minus the cross-fitted
+    log-loss of a domain classifier restricted to modalities S. In population
+    the chain rule gives I(W; X_{S+j}) = I(W; X_S) + I(W; X_j | X_S) >= I(W; X_S),
+    so LOMO_j = I(W; X_j | X_-j) >= 0, an unshifted modality contributes
+    exactly zero, and interaction v(ij) - v(i) - v(j) = -co-information
+    separates synergy (> 0) from redundancy (< 0) without the kernel dilution
+    that affects modality_shift_decomposition.
+
+    Finite-sample cross-fitting makes every v(S) slightly negative under the
+    null, and that penalty is not additive across subsets (spurious
+    interactions). It is estimated per subset by refitting on permuted labels
+    ``n_null`` times and subtracted.
+
+    Cross-fitting is repeated ``n_repeats`` times with fresh folds and null
+    permutations; estimates are averaged and the standard error adds the
+    between-repeat variance to the per-sample one, because fold and penalty
+    noise are otherwise ignored and inflate false "unique" / "synergistic"
+    labels. The one-sided z-tests are reliable away from zero and
+    conservative-to-irregular at the null boundary.
+    """
+    X = np.vstack([np.asarray(X_ref, float), np.asarray(X_new, float)])
+    W = np.r_[np.zeros(len(X_ref), int), np.ones(len(X_new), int)]
+    pi = W.mean()
+    l0 = -(W * np.log(pi) + (1 - W) * np.log(1 - pi))
+    names = list(blocks)
+    subsets = list(_subsets(names))
+    full = frozenset(names)
+    rng = np.random.default_rng(seed)
+
+    gains = []
+    for r in range(n_repeats):
+        s = seed + 1000 * r
+        folds = list(StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=s).split(X, W))
+        W_null = [rng.permutation(W) for _ in range(n_null)]
+        gain = {frozenset(): np.zeros(len(W))}
+        for S in subsets:
+            cols = [c for name in S for c in blocks[name]]
+            g = l0 - _crossfit_logloss(X[:, cols], W, folds, model, s, clip)
+            penalty = np.mean([
+                np.mean(l0 - _crossfit_logloss(X[:, cols], Wn, folds, model, s, clip)) for Wn in W_null
+            ]) if n_null > 0 else 0.0
+            gain[S] = g - penalty
+        gains.append(gain)
+
+    def _est(fn):
+        per = [fn(g) for g in gains]
+        means = np.array([d.mean() for d in per])
+        within = np.mean([d.var(ddof=1) / len(d) for d in per])
+        between = means.var(ddof=1) if len(per) > 1 else 0.0
+        return float(means.mean()), float(np.sqrt(within + between))
+
+    value = {S: _est(lambda g, S=S: g[S]) for S in subsets}
+    lomi = {j: _est(lambda g, j=j: g[frozenset([j])]) for j in names}
+    lomo = {j: _est(lambda g, j=j: g[full] - g[full - {j}]) for j in names}
+
+    from itertools import permutations
+    orders = list(permutations(names))
+
+    def _shapley_vec(g, j):
+        acc = np.zeros(len(W))
+        for order in orders:
+            before = frozenset(order[: order.index(j)])
+            acc += g[before | {j}] - g[before]
+        return acc / len(orders)
+
+    shapley = {j: _est(lambda g, j=j: _shapley_vec(g, j)) for j in names}
+    order_range = {}
+    for j in names:
+        contrib = [
+            float(np.mean([(g[frozenset(o[: o.index(j)]) | {j}] - g[frozenset(o[: o.index(j)])]).mean() for g in gains]))
+            for o in orders
+        ]
+        order_range[j] = (min(contrib), max(contrib))
+
+    interaction = {}
+    for S in subsets:
+        if len(S) == 2:
+            i, j = sorted(S)
+            interaction[S] = _est(lambda g, S=S, i=i, j=j: g[S] - g[frozenset([i])] - g[frozenset([j])])
+
+    return ModalityInfoDecomposition(
+        value=value,
+        lomi=lomi,
+        lomo=lomo,
+        shapley=shapley,
+        order_range=order_range,
+        interaction=interaction,
+        z_crit=z_crit,
     )
 
 

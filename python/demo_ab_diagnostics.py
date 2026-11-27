@@ -9,6 +9,7 @@ from ab_diagnostics import (
     block_loco_mmd,
     dependence_shift_test,
     hte_drivers,
+    modality_info_decomposition,
     modality_shift_decomposition,
     split_balance_c2st,
     stage_shift_report,
@@ -119,6 +120,18 @@ def main():
             lo, hi = r.order_range[j]
             print(f"   {j:>5}: LOMI={r.lomi[j]:+.4f} (p={r.p_lomi[j]:.3f}) LOMO={r.lomo[j]:+.4f} "
                   f"Shapley={r.shapley[j]:+.4f} order range [{lo:+.4f}, {hi:+.4f}]")
+
+    print("\n== 8. monotone decomposition: v(S) = I(W; X_S) from cross-fitted domain classifiers")
+    for scenario in ["none", "unique_text", "redundant", "dependence_flip"]:
+        ref, new = simulate_modalities(scenario)
+        r = modality_info_decomposition(ref, new, MODALITY_BLOCKS)
+        inter = r.interaction[frozenset(["text", "image"])]
+        print(f"-- {scenario}: v(M)={r.value[frozenset(MODALITY_BLOCKS)][0]:+.3f} "
+              f"interaction(text,image)={inter[0]:+.3f} (z={inter[0] / inter[1]:+.1f})")
+        for j in MODALITY_BLOCKS:
+            (mi, mi_se), (mo, mo_se) = r.lomi[j], r.lomo[j]
+            print(f"   {j:>5}: LOMI={mi:+.3f} (z={mi / mi_se:+.1f}) LOMO={mo:+.3f} (z={mo / mo_se:+.1f}) "
+                  f"Shapley={r.shapley[j][0]:+.3f} -> {r.pattern(j)}")
 
 
 if __name__ == "__main__":

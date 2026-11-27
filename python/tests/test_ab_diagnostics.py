@@ -9,6 +9,7 @@ from ab_diagnostics import (  # noqa: E402
     aipw_ate,
     block_loco_mmd,
     dependence_shift_test,
+    modality_info_decomposition,
     modality_shift_decomposition,
     split_balance_c2st,
     stage_shift_report,
@@ -87,3 +88,27 @@ def test_shapley_is_efficient():
     ref, new = simulate_modalities("unique_text", n=400, seed=11)
     r = modality_shift_decomposition(ref, new, MODALITY_BLOCKS, max_n=400, n_perm=20, seed=11)
     assert abs(sum(r.shapley.values()) - r.value[frozenset(MODALITY_BLOCKS)]) < 1e-9
+
+
+def _info(scenario, seed):
+    ref, new = simulate_modalities(scenario, n=600, seed=seed)
+    return modality_info_decomposition(ref, new, MODALITY_BLOCKS, n_repeats=2, seed=seed)
+
+
+def test_info_decomposition_labels_each_pattern():
+    expected = {
+        "none": {"text": "none", "image": "none", "audio": "none"},
+        "unique_text": {"text": "unique", "image": "none", "audio": "none"},
+        "redundant": {"text": "redundant", "image": "redundant", "audio": "none"},
+        "dependence_flip": {"text": "synergistic", "image": "synergistic", "audio": "none"},
+    }
+    for scenario, labels in expected.items():
+        r = _info(scenario, seed=12)
+        assert {j: r.pattern(j) for j in MODALITY_BLOCKS} == labels, scenario
+
+
+def test_info_decomposition_has_no_kernel_dilution():
+    r = _info("unique_text", seed=13)
+    est, se = r.interaction[TEXT_IMAGE]
+    assert abs(est) < 3 * se
+    assert abs(est) < 0.1 * r.lomi["text"][0]
