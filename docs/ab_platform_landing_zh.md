@@ -20,13 +20,13 @@ FSDS 的两条臂，把“批次指示变量”换成“实验组指示变量”
 | `ab_diagnostics.py`（新增） | C2ST 分流检验、AIPW、异质性检验与驱动排序、灰度阶段对比、分块 MMD | 第 2 节的五件事 | 可直接跑，有测试 |
 | `VIMP_mmd_benchmark.py` / `VIMP_hsic_benchmark.py` | LOCO-MMD / LOCO-HSIC | 特征级、模态块级漂移归因 | 可导入 |
 | `model_registry_class.py` | RF/XGB/MLP/Ridge 统一 fit/predict | 干扰（nuisance）模型可替换，做模型敏感性 | 可导入 |
-| `permuCATE_vimp.py`、`LOCO_vimp_r_risk.py` | PermuCATE、R-risk LOCO | 异质效应驱动的另外两种口径 | 缺 `benchmark_config.py`，`LOCO_vimp_r_risk.py` 还缺 `VIMP_DS_utils.py` 并硬编码本机路径 |
-| `domain_classifier.py` | 多模型域分类器 VIMP（LOCO / 条件置换 / OOB） | 分流体检换分类器 | `OOBVIMPConfig`、`_domain_oob_mask` 未定义 |
+| `permuCATE_vimp.py`、`LOCO_vimp_r_risk.py` | PermuCATE、R-risk LOCO | 异质效应驱动的另外两种口径 | 第 4 轮已修复，可导入，有测试（见 4.1） |
+| `domain_classifier.py` | 多模型域分类器 VIMP（LOCO / 条件置换 / OOB） | 分流体检换分类器 | 第 4 轮已修复，可导入，有测试；torch 改为可选依赖 |
 | `imageShiftLocalization.py` | CLIP/VAE 隐空间 + RF 域分类器 + 区域选择，15 类图像腐蚀 | 素材/封面 patch 级定位；监控 canary 注入 | Colab 脚本，需拆成函数 |
 | `adversarial_conceptdrift.py` | MI-FGSM / SI-NI / VMI / R-FGSM / jitter | 监控告警的对抗性压测 | 需整理接口 |
 | `fsds_nonuniqueness.py` | MMD/HSIC 路径顺序非唯一性 | 归因报告给“区间”而非唯一分解 | 有语法错误 |
 | `weakly_overlapped_benchmark.py` | 弱重叠敏感性 | 新人群、冷启动下概念臂的可信度门槛 | 有缩进错误 |
-| `outcome_model_sensitivity.py` | PermuCATE/DRPerm 换 RF/XGB/MLP/Ridge | AIPW 与驱动排序的模型鲁棒性报告 | 依赖上面缺失的配置 |
+| `outcome_model_sensitivity.py` | PermuCATE/DRPerm 换 RF/XGB/MLP/Ridge | AIPW 与驱动排序的模型鲁棒性报告 | 配置缺失已修复；现在只差 torch 依赖 |
 | `SGShift.py` | knockoff 选择漂移特征 | FDR 控制的漂移特征集合 | 可改造 |
 
 ## 2. 已实现并验证的五件事
@@ -188,8 +188,34 @@ python -m pytest -q tests/test_ab_diagnostics.py
 
 ## 4. 上线前必须补的工程缺口
 
-- `permuCATE_vimp.py`、`LOCO_vimp_r_risk.py`、`benchmark_methods.py` 依赖仓库里不存在的 `benchmark_config.py`（只有 `.pyc`）和 `VIMP_DS_utils.py`，并且有 `os.chdir` 到本机路径的代码。
-- `domain_classifier.py` 与 `other_benchmark_method.py` 引用了未定义的 `OOBVIMPConfig` 和 `_domain_oob_mask`；`other_benchmark_method.py` 还有语法错误。
+### 4.1 第 4 轮已修复
+
+| 问题 | 修复 |
+| --- | --- |
+| 仓库里缺少 `benchmark_config.py`（只剩 `.pyc`） | 从字节码完整还原：用固定参数构造 `ModelRegistry`，再导出 `MODEL_REGISTRY` |
+| 仓库里缺少 `VIMP_DS_utils.py` | 新建；数组工具复用 `model_registry_class.py`，补上 `_safe_normalize` 和 `infer_response_type` |
+| `LOCO_vimp_r_risk.py` 调用了 `os.chdir` 但没有 `import os` | 删除硬编码路径 |
+| `LOCO_vimp_r_risk.py` 最后一步用列表减浮点数，运行即抛 `TypeError` | 先转成数组再相减 |
+| `LOCO_vimp_r_risk.py` 忽略传入的 `model_registry`，且全模型与 LOCO 模型使用不同的折划分 | 透传参数，统一使用 `seed` |
+| `permuCATE_vimp.py` 导入了不存在的 `utils._as_1d` | 删除该导入（文件内已有同名定义） |
+| `permuCATE_vimp.py` 忽略 `test_size`，划分时不固定随机种子 | 透传 `test_size` 和 `random_state=seed` |
+| `permuCATE_vimp.py` 处理分类特征时，条件模型返回的概率矩阵与特征向量形状不匹配 | 用类别编码的条件期望（概率矩阵 · 类别编号）作为 ν̂ |
+| `domain_classifier.py` 引用了未定义的 `OOBVIMPConfig` 和 `_domain_oob_mask` | 补上定义：对没有 bagging 的模型，用分层留出集模拟 OOB |
+| `domain_classifier.py` 的 OOB 重要性是在模型训练用过的样本上评估的 | 改为在补集上重新拟合、在留出集上评估 |
+| `domain_classifier.py` 导入时强制依赖 torch | 改为可选依赖；只有安装了 torch 才注册 `neural_network_clf` |
+
+**验证**（预埋场景，`tests/test_restored_modules.py`）：
+
+- 异质效应只由 x2 调节，x0 只影响结果水平：PermuCATE 的重要性为 [−0.043, 0.007, **6.696**, −0.018, 0.008, −0.023]；LOCO R-risk 为 [0.872, −0.063, **2.117**, −0.082, −0.068, −0.068]。两者都把 x2 排在第一。
+- 3 水平分类特征 x3 调节效应：PermuCATE 把 x3 排在第一（0.901，其余都不超过 0.02）。
+- 漂移只发生在 x1：域分类器的三种口径（LOCO、条件置换、OOB）在 RF 和 logistic 两种分类器下都把 x1 排在第一。
+
+**方法学发现**：LOCO R-risk 给了只影响结果水平的 x0 0.872 的重要性，约为真驱动特征的 41%；PermuCATE 给 x0 的是 −0.043。原因是 LOCO R-risk 剔除特征后，连结果模型和倾向分模型也一起重拟合，剔除预后特征会让 R-risk 的残差变大。所以“哪些特征驱动处理效应异质”应该用 PermuCATE 或 `hte_drivers` 来回答；LOCO R-risk 的排序里混有预后特征，不能直接用于定向放量。
+
+### 4.2 仍未修复
+
+- `benchmark_methods.py` 等基准脚本仍然 `os.chdir` 到本机路径。
+- `other_benchmark_method.py` 引用了未定义的 `OOBVIMPConfig` 和 `_domain_oob_mask`，而且有语法错误。
 - `fsds_nonuniqueness.py`、`weakly_overlapped_benchmark.py`、`synthetic_DGP.py` 有语法或缩进错误，无法导入。
 - `token_shift_attribution.py`、`localization1_syDID.py` 目前是草稿，不能运行。
 - `imageShiftLocalization.py` 是 Colab 脚本（含 `drive.mount` 和 `!pip`），需要拆成可导入的函数。
@@ -212,7 +238,7 @@ python -m pytest -q tests/test_ab_diagnostics.py
 | 1 | 分流体检、AIPW、异质性诊断、灰度阶段对比、分块 MMD | 完成 |
 | 2 | LOMO 集合函数分解（LOMI / LOMO / Shapley / 顺序区间 / 交互项）+ copula 依赖漂移检验 | 完成；发现 MMD 不单调的问题 |
 | 3 | 基于分类器的单调价值函数，修正“稀释”问题 | 完成；另加过拟合惩罚修正和重复交叉拟合，60/60 标签正确 |
-| 4 | 修复工程缺口，让 `permuCATE_vimp.py`、`LOCO_vimp_r_risk.py`、`domain_classifier.py` 可导入 | 待做 |
+| 4 | 修复工程缺口，让 `permuCATE_vimp.py`、`LOCO_vimp_r_risk.py`、`domain_classifier.py` 可导入 | 完成；另修了 4 个运行时 bug，发现 LOCO R-risk 会把预后特征算成重要 |
 | 5 | 零假设校准：各检验的一类错误率与功效模拟，以及 AIPW 置信区间覆盖率 | 待做 |
 | 6 | 概念臂的模态级 LOMO：哪个模态驱动处理效应异质 | 待做 |
 | 7 | canary 压测框架：图像腐蚀与对抗扰动的预埋漂移矩阵 | 待做 |
