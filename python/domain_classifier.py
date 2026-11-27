@@ -1,26 +1,30 @@
 #VIMP configuration:
 import math
-import torch
 import numpy as np
 import pandas as pd
-import torch.nn as nn
 import xgboost as xgb
-import torch.optim as optim
-import torch.nn.functional as F
 from dataclasses import dataclass
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import Ridge
 from sklearn.impute import SimpleImputer
 from sklearn.utils import check_random_state
-from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from typing import Any, Callable, Dict, Optional, Tuple, Union
-from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge
+
+#torch is only needed for the 'neural_network_clf' adapter.
+try:
+    import torch
+    import torch.nn as nn
+    import torch.optim as optim
+    from torch.utils.data import Dataset, DataLoader
+    _HAS_TORCH = True
+except ImportError:
+    _HAS_TORCH = False
 
 #Model Registry Class:
 FitFn = Callable[..., Any]
@@ -38,40 +42,65 @@ class ModelAdapter:
     predict: PredictFn
 
 
-#Building the dataset here:
-class DC_Dataset(Dataset):
-    def __init__(self, X, Y):
-        self.X = torch.tensor(X, dtype = torch.float32)
-        self.Y = torch.tensor(Y, dtype = torch.long)
-    def __len__(self):
-        return len(self.Y)
-    def __getitem__(self, i):
-        X = self.X[i]
-        Y = self.Y[i]
-        return X, Y
+if _HAS_TORCH:
+    #Building the dataset here:
+    class DC_Dataset(Dataset):
+        def __init__(self, X, Y):
+            self.X = torch.tensor(X, dtype = torch.float32)
+            self.Y = torch.tensor(Y, dtype = torch.long)
+        def __len__(self):
+            return len(self.Y)
+        def __getitem__(self, i):
+            X = self.X[i]
+            Y = self.Y[i]
+            return X, Y
 
 
-#Building the domain regressor here - 
-class domain_classifier(nn.Module):
-    def __init__(self, input_dim, n_classes = 2, n_layers = 2, dropout = 0.15):
-        super().__init__()
-        dims = np.round(
-            np.exp(np.linspace(np.log(max(input_dim, 2)), 0, n_layers))
-        ).astype(int)
-        dims = np.maximum(dims, 1)
-        layers_dict = []
-        for i in range(n_layers - 1):
-            in_dim = dims[i]
-            out_dim = dims[i + 1]
-            layers_dict.append(nn.Linear(in_dim, out_dim))
-            layers_dict.append(nn.BatchNorm1d(out_dim))
-            layers_dict.append(nn.ReLU())
-            if dropout > 0:
-                layers_dict.append(nn.Dropout(dropout))
-        layers_dict.append(nn.Linear(dims[-1], n_classes))
-        self.net = nn.Sequential(*layers_dict)
-    def forward(self, X):
-        return torch.softmax(self.net(torch.tensor(X, dtype = torch.float32)), dim = -1)
+    #Building the domain regressor here - 
+    class domain_classifier(nn.Module):
+        def __init__(self, input_dim, n_classes = 2, n_layers = 2, dropout = 0.15):
+            super().__init__()
+            dims = np.round(
+                np.exp(np.linspace(np.log(max(input_dim, 2)), 0, n_layers))
+            ).astype(int)
+            dims = np.maximum(dims, 1)
+            layers_dict = []
+            for i in range(n_layers - 1):
+                in_dim = dims[i]
+                out_dim = dims[i + 1]
+                layers_dict.append(nn.Linear(in_dim, out_dim))
+                layers_dict.append(nn.BatchNorm1d(out_dim))
+                layers_dict.append(nn.ReLU())
+                if dropout > 0:
+                    layers_dict.append(nn.Dropout(dropout))
+            layers_dict.append(nn.Linear(dims[-1], n_classes))
+            self.net = nn.Sequential(*layers_dict)
+        def forward(self, X):
+            return torch.softmax(self.net(torch.tensor(X, dtype = torch.float32)), dim = -1)
+
+
+'''
+Configuration for the 'oob' VIMP: permutation importance evaluated on samples
+the domain classifier was not fit on. Adapters without bagging have no native
+out-of-bag set, so it is emulated by a stratified hold-out of size
+oob_fraction and the model is refit on the complement.
+'''
+@dataclass(frozen = True)
+class OOBVIMPConfig:
+    oob_fraction: float = 0.3
+    n_perm_reps: int = 10
+
+
+def _domain_oob_mask(X, Y, seed = 0, oob_config = None):
+    cfg = oob_config or OOBVIMPConfig()
+    Y = np.asarray(Y).ravel()
+    idx = np.arange(len(Y))
+    _, oob_idx = train_test_split(
+        idx, test_size = cfg.oob_fraction, stratify = Y, random_state = int(seed) % (2 ** 30)
+    )
+    mask = np.zeros(len(Y), dtype = bool)
+    mask[oob_idx] = True
+    return mask
 
 
 '''
@@ -342,15 +371,17 @@ class ModelVIMPRegistry:
         Return a dictionary mapping model names to their corresponding ModelAdapter instances.
         This provides a central registry for all available models.
         """
-        return {
+        registry = {
         'rf_classifier': self.make_rf_classifier(),
         'rf_multinomial': self.make_rf_multinomial(),
-        'neural_network_clf': self.make_domain_classifier(),
         'mlp_classifier': self.make_mlp_classifier(),
         'xgb_classifier': self.make_xgb_classifier(),
         'xgb_multiclassifier': self.make_xgb_multiclassifier(),
         'logistic_clf': self.make_logistic_classification()
         }
+        if _HAS_TORCH:
+            registry['neural_network_clf'] = self.make_domain_classifier()
+        return registry
     def as_r_style_dict(self):
         """
         Convert the adapter registry into an R-style dictionary format.
@@ -439,8 +470,10 @@ def compute_vimp_from_adapter(
         oob_mask = _domain_oob_mask(
             X_train, Y_train, seed=random_state, oob_config=cfg
         )
-        X_oob = np.asarray(X_train, dtype=float)[oob_mask]
-        Y_oob = np.asarray(Y_train, dtype=int).ravel()[oob_mask]
+        X_all = np.asarray(X_train, dtype=float)
+        Y_all = np.asarray(Y_train, dtype=int).ravel()
+        X_oob, Y_oob = X_all[oob_mask], Y_all[oob_mask]
+        fitted_obj = adapter['fit'](X_all[~oob_mask], Y_all[~oob_mask], seed=random_state)
         p = X_oob.shape[1]
         n_classes_oob = len(set(Y_train).union(set(Y_oob)))
         probs_base = adapter['predict'](fitted_obj, X_oob)
