@@ -138,6 +138,154 @@ def block_loco_mmd(X_ref, X_new, blocks: Dict[str, Sequence[int]], max_n=1000, s
     return out
 
 
+def _block_grams(Z, blocks):
+    grams = {}
+    for name, cols in blocks.items():
+        Zb = Z[:, cols]
+        sq = np.sum(Zb * Zb, axis=1)
+        D = np.maximum(sq[:, None] + sq[None, :] - 2.0 * Zb @ Zb.T, 0.0)
+        med = np.median(D[np.triu_indices_from(D, k=1)])
+        grams[name] = np.exp(-D / (2.0 * med + 1e-12))
+    return grams
+
+
+def _mmd2_from_gram(K, A):
+    """Unbiased MMD^2 for every label column of A (N x R, 1 = reference)."""
+    B = 1.0 - A
+    n, m = A.sum(axis=0), B.sum(axis=0)
+    KA, KB = K @ A, K @ B
+    diag = np.diag(K)[:, None]
+    s_aa = np.sum(A * KA, axis=0) - np.sum(A * diag, axis=0)
+    s_bb = np.sum(B * KB, axis=0) - np.sum(B * diag, axis=0)
+    s_ab = np.sum(A * KB, axis=0)
+    return s_aa / (n * (n - 1)) + s_bb / (m * (m - 1)) - 2.0 * s_ab / (n * m)
+
+
+def _subsets(names):
+    from itertools import combinations
+    for r in range(1, len(names) + 1):
+        for S in combinations(names, r):
+            yield frozenset(S)
+
+
+@dataclass
+class ModalityDecomposition:
+    value: Dict[frozenset, float]
+    lomi: Dict[str, float]
+    lomo: Dict[str, float]
+    shapley: Dict[str, float]
+    order_range: Dict[str, tuple]
+    interaction: Dict[frozenset, float]
+    p_joint: float
+    p_lomi: Dict[str, float]
+
+
+def modality_shift_decomposition(
+    X_ref,
+    X_new,
+    blocks: Dict[str, Sequence[int]],
+    max_n=800,
+    n_perm=200,
+    seed=0,
+):
+    """Set-function view of multimodal shift: v(S) = MMD^2 restricted to modalities S.
+
+    Each modality gets its own median-heuristic RBF kernel and k_S is the
+    product of the kernels in S, so v(S) are comparable across subsets
+    (re-estimating one bandwidth on the concatenation changes the kernel with
+    the subset and makes LOMO differences partly a bandwidth artefact).
+
+    - LOMI_j = v({j})              marginal shift of modality j alone
+    - LOMO_j = v(M) - v(M \\ j)    what j adds on top of all other modalities
+    - Shapley_j                    average of v(S+j) - v(S) over all orders;
+      order_range gives min / max over orders, i.e. the path non-uniqueness
+    - interaction[{i, j}]          Moebius dividend v(ij) - v(i) - v(j):
+      > 0 synergy (shift only visible jointly), < 0 redundancy (shared shift)
+
+    MMD^2 is not monotone in S: multiplying in the kernel of an unshifted
+    modality shrinks the statistic, so LOMO of an unshifted modality is
+    negative and interactions mix redundancy with this dilution. Read signs
+    of LOMO / interactions only for modalities whose LOMI is significant.
+
+    Label permutation gives valid p-values for H0: P = Q (joint) and for
+    H0: P_j = Q_j (LOMI). It does NOT give valid p-values for LOMO or the
+    interactions, whose nulls are conditional; report those as effect sizes,
+    and use dependence_shift_test for the cross-modal dependence question.
+    """
+    rng = np.random.default_rng(seed)
+    A = _subsample_batch(np.asarray(X_ref, float), max_n, rng)
+    B = _subsample_batch(np.asarray(X_new, float), max_n, rng)
+    Z = np.vstack([A, B])
+    labels = np.r_[np.ones(len(A)), np.zeros(len(B))]
+    grams = _block_grams(Z, blocks)
+    names = list(blocks)
+
+    perms = np.column_stack([labels] + [rng.permutation(labels) for _ in range(n_perm)])
+    value, null = {frozenset(): 0.0}, {}
+    for S in _subsets(names):
+        K = np.ones_like(grams[names[0]])
+        for name in S:
+            K = K * grams[name]
+        stats_all = _mmd2_from_gram(K, perms)
+        value[S] = float(stats_all[0])
+        null[S] = stats_all[1:]
+
+    full = frozenset(names)
+    lomi = {j: value[frozenset([j])] for j in names}
+    lomo = {j: value[full] - value[full - {j}] for j in names}
+
+    from itertools import permutations
+    contrib = {j: [] for j in names}
+    for order in permutations(names):
+        seen = frozenset()
+        for j in order:
+            contrib[j].append(value[seen | {j}] - value[seen])
+            seen = seen | {j}
+    shapley = {j: float(np.mean(c)) for j, c in contrib.items()}
+    order_range = {j: (float(np.min(c)), float(np.max(c))) for j, c in contrib.items()}
+
+    interaction = {}
+    for S in _subsets(names):
+        if len(S) == 2:
+            i, j = sorted(S)
+            interaction[S] = value[S] - value[frozenset([i])] - value[frozenset([j])]
+
+    def _p(S):
+        return float((1 + np.sum(null[S] >= value[S])) / (n_perm + 1))
+
+    return ModalityDecomposition(
+        value=value,
+        lomi=lomi,
+        lomo=lomo,
+        shapley=shapley,
+        order_range=order_range,
+        interaction=interaction,
+        p_joint=_p(full),
+        p_lomi={j: _p(frozenset([j])) for j in names},
+    )
+
+
+def _rank_transform(X):
+    ranks = np.argsort(np.argsort(X, axis=0), axis=0)
+    return (ranks + 1.0) / (len(X) + 1.0)
+
+
+def dependence_shift_test(X_ref, X_new, blocks, max_n=800, n_perm=200, seed=0):
+    """Test for a change in cross-modal dependence that is robust to marginal shift.
+
+    Each coordinate is rank-transformed within its own batch, which removes
+    every per-coordinate marginal difference and leaves only the copula; a
+    joint product-kernel MMD on the transformed data then tests
+    H0: copula(P) = copula(Q). Within-modality dependence changes also
+    register; compare with per-block results to attribute them.
+    """
+    rng = np.random.default_rng(seed)
+    A = _rank_transform(_subsample_batch(np.asarray(X_ref, float), max_n, rng))
+    B = _rank_transform(_subsample_batch(np.asarray(X_new, float), max_n, rng))
+    res = modality_shift_decomposition(A, B, blocks, max_n=max_n, n_perm=n_perm, seed=seed)
+    return {"statistic": res.value[frozenset(blocks)], "p_value": res.p_joint}
+
+
 @dataclass
 class AIPWResult:
     ate: float
