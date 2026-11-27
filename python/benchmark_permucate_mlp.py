@@ -194,6 +194,18 @@ class Oracle:
         return np.stack([np.full(len(X), 1 - self.pi), np.full(len(X), self.pi)], axis=1)
 
 
+class NoisyOracle:
+    """True regression plus independent Gaussian noise, calibrated so that R^2 against the truth is `r2`."""
+
+    def __init__(self, fn, ref_X, r2, seed):
+        self.fn = fn
+        self.sd = float(np.sqrt((1.0 - r2) * np.var(fn(ref_X))))
+        self.rng = np.random.default_rng(seed)
+
+    def predict(self, X):
+        return self.fn(X) + self.sd * self.rng.standard_normal(len(X))
+
+
 def _make_models(kind, seed, n_est, n):
     if kind == "mlp":
         return TorchMLP("reg", seed), TorchMLP("reg", seed + 1), TorchMLP("clf", seed + 2)
@@ -208,7 +220,24 @@ def _tau_forest(seed, n_est, mtry):
 
 def permucate_fit_cf(X, Y, W, seed, kind, n_est, truth=None, clip_e=0.01, n_folds=2, tau_mtry="sqrt"):
     Xtr, Xte, Wtr, Wte, Ytr, Yte = train_test_split(X, W, Y, test_size=0.5, stratify=W, random_state=seed)
-    if kind == "rf_insample":
+    true_pi = kind.endswith("_truepi")
+    if kind.startswith("oracle_r2_"):
+        r2 = float(kind.split("_")[-1])
+        mu0, mu1, ps = (NoisyOracle(truth["mu0"], Xtr, r2, seed + 21), NoisyOracle(truth["mu1"], Xtr, r2, seed + 22),
+                        Oracle(pi=0.5))
+        m0, m1, pi = mu0.predict(Xtr), mu1.predict(Xtr), np.full(len(Xtr), 0.5)
+    elif kind == "oracle_rfpi":
+        mu0, mu1 = Oracle(truth["mu0"]), Oracle(truth["mu1"])
+        m0, m1 = mu0.predict(Xtr), mu1.predict(Xtr)
+        pi = np.zeros(len(Xtr))
+        fms = []
+        for k, (a, b) in enumerate(KFold(n_folds, shuffle=True, random_state=seed).split(Xtr)):
+            fp = _make_models("rf", seed + 10 * k, n_est, len(a))[2]
+            fp.fit(Xtr[a], Wtr[a])
+            pi[b] = fp.predict_proba(Xtr[b])[:, 1]
+            fms.append(fp)
+        ps = Avg(fms)
+    elif kind == "rf_insample":
         mu0, mu1, ps = _make_models("rf", seed, n_est, len(Xtr))
         mu0.fit(Xtr[Wtr == 0], Ytr[Wtr == 0])
         mu1.fit(Xtr[Wtr == 1], Ytr[Wtr == 1])
@@ -221,7 +250,7 @@ def permucate_fit_cf(X, Y, W, seed, kind, n_est, truth=None, clip_e=0.01, n_fold
         m0, m1, pi = np.zeros(len(Xtr)), np.zeros(len(Xtr)), np.zeros(len(Xtr))
         folds_models = []
         for k, (a, b) in enumerate(KFold(n_folds, shuffle=True, random_state=seed).split(Xtr)):
-            f0, f1, fp = _make_models(kind, seed + 10 * k, n_est, len(a))
+            f0, f1, fp = _make_models("rf" if true_pi else kind, seed + 10 * k, n_est, len(a))
             a0, a1 = a[Wtr[a] == 0], a[Wtr[a] == 1]
             f0.fit(Xtr[a0], Ytr[a0])
             f1.fit(Xtr[a1], Ytr[a1])
@@ -229,6 +258,9 @@ def permucate_fit_cf(X, Y, W, seed, kind, n_est, truth=None, clip_e=0.01, n_fold
             m0[b], m1[b], pi[b] = f0.predict(Xtr[b]), f1.predict(Xtr[b]), fp.predict_proba(Xtr[b])[:, 1]
             folds_models.append((f0, f1, fp))
         mu0, mu1, ps = (Avg([m[i] for m in folds_models]) for i in range(3))
+        if true_pi:
+            pi = np.full(len(Xtr), 0.5)
+            ps = Oracle(pi=0.5)
     pi = np.clip(pi, clip_e, 1 - clip_e)
     pseudo = m1 - m0 + (Ytr - np.where(Wtr == 1, m1, m0)) * (Wtr - pi) / (pi * (1 - pi))
     tau = _tau_forest(seed + 3, n_est, tau_mtry).fit(Xtr, pseudo)
