@@ -107,6 +107,19 @@ def test_info_decomposition_labels_each_pattern():
         assert {j: r.pattern(j) for j in MODALITY_BLOCKS} == labels, scenario
 
 
+def test_calibration_script_runs_and_reports_wilson_intervals(tmp_path):
+    import json
+
+    from calibration_ab_diagnostics import calib_dependence, wilson
+
+    lo, hi = wilson(5, 100)
+    assert 0.02 < lo < 0.05 < hi < 0.12
+    rows = calib_dependence(reps_null=5, reps_power=5, seed=0)
+    assert len(rows) == 4
+    assert all(0.0 <= r["rate"] <= 1.0 and r["ci_low"] <= r["rate"] <= r["ci_high"] for r in rows)
+    (tmp_path / "rows.json").write_text(json.dumps(rows))
+
+
 def test_info_decomposition_has_no_kernel_dilution():
     r = _info("unique_text", seed=13)
     est, se = r.interaction[TEXT_IMAGE]
