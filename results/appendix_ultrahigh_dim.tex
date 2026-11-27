@@ -1,0 +1,38 @@
+% One-page appendix section: selection performance as p/n grows. Include with \input{appendix_ultrahigh_dim}
+% after \appendix. Requires \usepackage{booktabs} and \usepackage{amsmath}.
+% Numbers: results/ultrahigh_dim_summary.md (messy design), results/permucate_mlp/summary.md (pure concept drift).
+
+\section{Performance in the ultra-high-dimensional regime}
+\label{app:uhd}
+
+\paragraph{Setting.}
+All designs use $n=500$ observations per batch and $p/n\in\{20,100\}$ ($p=10{,}000$ and $50{,}000$), with $10\%$ of the features carrying signal; the pure concept-drift study has $10$ shifted features and also covers $p/n\in\{200,500\}$ (up to $p=250{,}000$). Selection performance is measured by the AUC of the feature scores against the set of shifted features.
+
+\paragraph{Result.}
+Increasing $p/n$ from $20$ to $100$ barely changes the performance of the methods that detect shifted features from the covariates (FSL-Net and DataFix: AUC $0.75\to0.75$ and $0.74\to0.74$), moderately reduces that of the random-forest domain classifier ($0.73\to0.62$), and cannot reduce that of the outcome-based methods in the covariate-plus-concept-shift design, which are already at chance at $p/n=20$ (Table~\ref{tab:uhd_decline}, top). Under pure concept drift, where the outcome-based methods are the only informative ones, the decline is large: the AUC of PermuCATE falls from $0.76$ to $0.58$ and $0.52$ at $p/n=20,100,500$, and that of the oracle from $0.86$ to $0.79$ and $0.64$ (Table~\ref{tab:uhd_decline}, bottom). Ablations with true or noisy nuisance functions attribute most of the gap between the learned and the oracle versions to the limited accuracy of the outcome regressions (out-of-sample $R^2$ of $0.05$--$0.15$ for random forests and MLPs alike), which is a sample-size effect rather than an effect of the model class. A small decline is therefore supported for covariate-shift detection only.
+
+\begin{table}[h]
+\centering
+\caption{Selection AUC as $p/n$ grows. Top: messy design with concept and covariate shift (mean over a 20-point grid of factor strengths, one replicate per point; DataFix at $p/n=100$: three grid points). Bottom: pure concept drift, $10$ shifted features (mean over five replicates; ``--'': not run).}
+\label{tab:uhd_decline}
+\begin{tabular}{lccc}
+\toprule
+ & $p/n=20$ & $p/n=100$ & $p/n=500$ \\
+\midrule
+\multicolumn{4}{l}{\emph{Concept and covariate shift}} \\
+FSL-Net                         & 0.748 & 0.747 & -- \\
+DataFix                         & 0.743 & 0.741 & -- \\
+RF domain classifier            & 0.728 & 0.622 & -- \\
+SGShift $\ell_1$ (specified)    & 0.532 & 0.515 & -- \\
+PermuCATE                       & 0.506 & 0.500 & -- \\
+LOCO-R-risk                     & 0.498 & 0.496 & -- \\
+\midrule
+\multicolumn{4}{l}{\emph{Pure concept drift}} \\
+PermuCATE (RF nuisances)        & 0.758 & 0.582 & 0.520 \\
+PermuCATE (oracle nuisances)    & 0.861 & 0.788 & 0.640 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Limitations.}
+One data-generating process per design; one replicate per grid point in the main benchmark (the grid points differ in factor strength and are not independent replicates) and five replicates in the concept-drift study, with standard errors of $0.02$--$0.06$ in AUC, so differences below about $0.05$--$0.1$ are not resolved. The stability of FSL-Net and DataFix is shown at two values of $p/n$ only. Rows are i.i.d.; in a real stock--month panel, dependence across stocks within a period lowers the effective sample size, so the decline there may be steeper.
