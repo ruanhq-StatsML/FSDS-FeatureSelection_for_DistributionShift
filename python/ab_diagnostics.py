@@ -20,6 +20,7 @@ import numpy as np
 from scipy import stats
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import roc_auc_score
+from sklearn.linear_model import Ridge
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
 
 from VIMP_mmd_benchmark import MMD, _subsample_batch
@@ -541,6 +542,20 @@ def aipw_ate(
     )
 
 
+def _blp_last_coef(psi, regressors):
+    """OLS of psi on [1, *regressors]; HC1 one-sided test of the last coefficient > 0."""
+    if np.var(regressors[-1]) < 1e-12:
+        return 0.0, float("inf"), 1.0
+    D = np.column_stack([np.ones_like(psi)] + list(regressors))
+    coef, *_ = np.linalg.lstsq(D, psi, rcond=None)
+    resid = psi - D @ coef
+    bread = np.linalg.pinv(D.T @ D)
+    meat = (D * resid[:, None] ** 2).T @ D
+    cov = bread @ meat @ bread * len(psi) / (len(psi) - D.shape[1])
+    est, se = float(coef[-1]), float(np.sqrt(max(cov[-1, -1], 1e-300)))
+    return est, se, float(stats.norm.sf(est / se))
+
+
 @dataclass
 class HTEReport:
     heterogeneity_gain: float
@@ -591,17 +606,7 @@ def hte_drivers(
     gain_se = diff.std(ddof=1) / np.sqrt(len(diff))
 
     s = tau_te - tau_te.mean()
-    if np.var(s) < 1e-12:
-        slope, slope_se, p_value = 0.0, float("inf"), 1.0
-    else:
-        D = np.column_stack([np.ones_like(s), s])
-        coef, *_ = np.linalg.lstsq(D, psi_te, rcond=None)
-        resid = psi_te - D @ coef
-        bread = np.linalg.inv(D.T @ D)
-        meat = (D * resid[:, None] ** 2).T @ D
-        cov = bread @ meat @ bread * len(s) / (len(s) - 2)
-        slope, slope_se = float(coef[1]), float(np.sqrt(cov[1, 1]))
-        p_value = float(stats.norm.sf(slope / slope_se))
+    slope, slope_se, p_value = _blp_last_coef(psi_te, [s])
 
     rng = np.random.default_rng(seed)
     base = loss_tau.mean()
@@ -628,6 +633,137 @@ def hte_drivers(
         blp_slope=slope,
         blp_slope_se=slope_se,
         importance=importance,
+    )
+
+
+@dataclass
+class ModalityHTEDecomposition:
+    """Per-modality heterogeneity attribution; each entry is (estimate, aggregated p-value).
+
+    joint / LOMI estimates are the variance of the BLP projection of tau on
+    tau_hat_S; LOMO estimates are Cov(psi, tau_hat_M(X) - tau_hat_M(X~)).
+    All are medians over splits.
+    """
+
+    joint: tuple
+    lomi: Dict[str, tuple]
+    lomo: Dict[str, tuple]
+    alpha: float
+    min_share: float
+
+    def pattern(self, name):
+        """unique / redundant / synergistic / none, from the LOMI and LOMO tests.
+
+        LOMO also has to reach min_share of the joint heterogeneity: two noisy
+        copies of one latent each carry a real but negligible amount of
+        information beyond the other, which large samples detect.
+        """
+        alone = self.lomi[name][1] < self.alpha
+        drop = self.lomo[name][1] < self.alpha and self.lomo[name][0] >= self.min_share * self.joint[0]
+        if alone and drop:
+            return "unique"
+        if alone:
+            return "redundant"
+        if drop:
+            return "synergistic"
+        return "none"
+
+
+def modality_hte_decomposition(
+    X,
+    pseudo_outcome,
+    blocks: Dict[str, Sequence[int]],
+    n_splits=5,
+    n_draws=5,
+    nu_model="linear",
+    test_size=0.5,
+    alpha=0.05,
+    min_share=0.05,
+    seed=0,
+):
+    """Which modality drives treatment-effect heterogeneity (concept-arm LOMO).
+
+    On each random split, tau_hat_M and tau_hat_{m} are fit on the DR
+    pseudo-outcome. On the held-out half:
+      LOMI(m): BLP slope test of psi on tau_hat_{m} (does m alone rank effects).
+      LOMO(m): conditional randomisation. X~ replaces X_m by
+               nu_m(X_{-m}) + permuted residual, d = tau_hat_M(X) - mean over
+               draws of tau_hat_M(X~), and the coefficient on d in
+               psi ~ 1 + tau_hat_M(X~) + d is tested. Under
+               H0: E[tau | X] = E[tau | X_{-m}], E[d | X_{-m}] = 0, so d is
+               uncorrelated with psi up to the error in sampling X_m | X_{-m}.
+    Residualising tau_hat_M on a separately fit tau_hat_{M-m} is not a valid
+    LOMO test: two noisy fits of the same tau average out each other's error,
+    so the residual predicts psi even when m carries no information.
+
+    nu_model is "linear" (ridge) or "rf". The test is only as valid as the
+    conditional sampler; a random forest shrinks nu toward the mean in the
+    tails, which leaks a little of X_m's signal into d.
+
+    A purely prognostic modality has E[psi | X] free of it, so unlike LOCO
+    R-risk it scores zero. p-values are aggregated over splits with the
+    median rule p = min(1, 2 * median p) of Chernozhukov et al., valid under
+    arbitrary dependence between splits.
+    """
+    X = np.asarray(X, float)
+    psi = np.asarray(pseudo_outcome, float).ravel()
+    names = list(blocks)
+    cols_of = {j: list(blocks[j]) for j in names}
+    all_cols = sorted(c for j in names for c in cols_of[j])
+    rng = np.random.default_rng(seed)
+
+    def _signed_proj(est_se_p, s):
+        est, _, p = est_se_p
+        return np.sign(est) * est ** 2 * np.var(s), p
+
+    joint, lomi, lomo = [], {j: [] for j in names}, {j: [] for j in names}
+    for r in range(n_splits):
+        tr, te = train_test_split(np.arange(len(psi)), test_size=test_size, random_state=seed + r)
+        y = psi[te]
+        X_tr, X_te = X[np.ix_(tr, all_cols)], X[np.ix_(te, all_cols)]
+        pos = {c: k for k, c in enumerate(all_cols)}
+        full = _rf_tau(len(tr), len(all_cols), seed + r).fit(X_tr, psi[tr])
+        s_full = full.predict(X_te)
+        joint.append(_signed_proj(_blp_last_coef(y, [s_full - s_full.mean()]), s_full))
+
+        for j in names:
+            idx = [pos[c] for c in cols_of[j]]
+            others = [k for k in range(len(all_cols)) if k not in set(idx)]
+
+            only = _rf_tau(len(tr), len(idx), seed + r).fit(X_tr[:, idx], psi[tr])
+            s_only = only.predict(X_te[:, idx])
+            lomi[j].append(_signed_proj(_blp_last_coef(y, [s_only - s_only.mean()]), s_only))
+
+            if others:
+                target = X_tr[:, idx] if len(idx) > 1 else X_tr[:, idx[0]]
+                if nu_model == "rf":
+                    nu = _rf_regressor(len(tr), len(others), seed + r + 1)
+                else:
+                    nu = Ridge(alpha=1.0)
+                nu.fit(X_tr[:, others], target)
+                nu_hat = nu.predict(X_te[:, others]).reshape(len(te), -1)
+            else:
+                nu_hat = np.tile(X_tr[:, idx].mean(axis=0), (len(te), 1))
+            resid = X_te[:, idx] - nu_hat
+            s_tilde = np.zeros(len(te))
+            for _ in range(n_draws):
+                X_cr = X_te.copy()
+                X_cr[:, idx] = nu_hat + resid[rng.permutation(len(te))]
+                s_tilde += full.predict(X_cr) / n_draws
+            d = s_full - s_tilde
+            est, se, p = _blp_last_coef(y, [s_tilde - s_tilde.mean(), d - d.mean()])
+            lomo[j].append((float(np.cov(y, d)[0, 1]), p))
+
+    def _agg(rows):
+        rows = np.asarray(rows)
+        return float(np.median(rows[:, 0])), float(min(1.0, 2 * np.median(rows[:, 1])))
+
+    return ModalityHTEDecomposition(
+        joint=_agg(joint),
+        lomi={j: _agg(lomi[j]) for j in names},
+        lomo={j: _agg(lomo[j]) for j in names},
+        alpha=alpha,
+        min_share=min_share,
     )
 
 

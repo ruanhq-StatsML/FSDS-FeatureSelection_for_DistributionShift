@@ -9,6 +9,7 @@ from ab_diagnostics import (
     block_loco_mmd,
     dependence_shift_test,
     hte_drivers,
+    modality_hte_decomposition,
     modality_info_decomposition,
     modality_shift_decomposition,
     split_balance_c2st,
@@ -67,6 +68,44 @@ def simulate_modalities(scenario, n=800, d=4, shift=0.6, seed=0):
         return np.hstack([t, i, rng.normal(size=(n, d))])
 
     return batch(False), batch(True)
+
+
+def simulate_modal_hte(scenario, n=6000, d=3, effect=0.5, seed=0):
+    """Randomised A/B test with text / image / audio blocks.
+
+    audio is strongly prognostic for Y in every scenario but never modifies
+    the effect, so a correct concept-arm attribution must score it zero.
+
+    none         constant effect
+    unique_text  tau = 0.05 + effect * text_0
+    redundant    tau = 0.05 + effect * z, with text_0 and image_0 both noisy copies of z
+    synergy      tau = 0.05 + effect * text_0 * image_0 (no marginal heterogeneity)
+    bystander    tau = 0.05 + effect * text_0, image_0 = text_0 + 0.5 noise; image is
+                 marginally predictive but LOMO(image) = 0 exactly
+    """
+    rng = np.random.default_rng(seed)
+    t, i, a = (rng.normal(size=(n, d)) for _ in range(3))
+    if scenario == "none":
+        tau = np.full(n, 0.05)
+    elif scenario == "unique_text":
+        tau = 0.05 + effect * t[:, 0]
+    elif scenario == "redundant":
+        z = rng.normal(size=n)
+        t[:, 0] = z + 0.1 * rng.normal(size=n)
+        i[:, 0] = z + 0.1 * rng.normal(size=n)
+        tau = 0.05 + effect * z
+    elif scenario == "synergy":
+        tau = 0.05 + effect * t[:, 0] * i[:, 0]
+    elif scenario == "bystander":
+        i[:, 0] = t[:, 0] + 0.5 * rng.normal(size=n)
+        tau = 0.05 + effect * t[:, 0]
+    else:
+        raise ValueError(scenario)
+    X = np.hstack([t, i, a])
+    W = rng.binomial(1, 0.5, size=n)
+    Y = 1.5 * a[:, 0] + 0.5 * a[:, 1] + W * tau + rng.normal(size=n)
+    blocks = {"text": list(range(d)), "image": list(range(d, 2 * d)), "audio": list(range(2 * d, 3 * d))}
+    return X, Y, W, blocks
 
 
 def main():
@@ -132,6 +171,16 @@ def main():
             (mi, mi_se), (mo, mo_se) = r.lomi[j], r.lomo[j]
             print(f"   {j:>5}: LOMI={mi:+.3f} (z={mi / mi_se:+.1f}) LOMO={mo:+.3f} (z={mo / mo_se:+.1f}) "
                   f"Shapley={r.shapley[j][0]:+.3f} -> {r.pattern(j)}")
+
+    print("\n== 9. concept-arm LOMO: which modality drives effect heterogeneity (audio is prognostic only)")
+    for scenario in ["none", "unique_text", "bystander", "redundant", "synergy"]:
+        X, Y, W, blocks = simulate_modal_hte(scenario)
+        psi = aipw_ate(X, Y, W, propensity=0.5).pseudo_outcome
+        r = modality_hte_decomposition(X, psi, blocks)
+        print(f"-- {scenario}: joint={r.joint[0]:+.4f} (p={r.joint[1]:.4f})")
+        for j in blocks:
+            print(f"   {j:>5}: LOMI={r.lomi[j][0]:+.4f} (p={r.lomi[j][1]:.4f}) "
+                  f"LOMO={r.lomo[j][0]:+.4f} (p={r.lomo[j][1]:.4f}) -> {r.pattern(j)}")
 
 
 if __name__ == "__main__":
