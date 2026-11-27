@@ -9,12 +9,19 @@ from ab_diagnostics import (  # noqa: E402
     aipw_ate,
     block_loco_mmd,
     dependence_shift_test,
+    modality_hte_decomposition,
     modality_info_decomposition,
     modality_shift_decomposition,
     split_balance_c2st,
     stage_shift_report,
 )
-from demo_ab_diagnostics import MODALITY_BLOCKS, simulate_ab, simulate_cross_modal, simulate_modalities  # noqa: E402
+from demo_ab_diagnostics import (  # noqa: E402
+    MODALITY_BLOCKS,
+    simulate_ab,
+    simulate_cross_modal,
+    simulate_modal_hte,
+    simulate_modalities,
+)
 
 TEXT_IMAGE = frozenset(["text", "image"])
 
@@ -125,3 +132,30 @@ def test_info_decomposition_has_no_kernel_dilution():
     est, se = r.interaction[TEXT_IMAGE]
     assert abs(est) < 3 * se
     assert abs(est) < 0.1 * r.lomi["text"][0]
+
+
+def _modal_hte(scenario, seed=0):
+    X, Y, W, blocks = simulate_modal_hte(scenario, n=4000, seed=seed)
+    psi = aipw_ate(X, Y, W, propensity=0.5, n_folds=3, seed=seed).pseudo_outcome
+    return modality_hte_decomposition(X, psi, blocks, n_splits=3, seed=seed), blocks
+
+
+def test_modality_hte_attributes_unique_driver_and_ignores_prognostic_modality():
+    res, blocks = _modal_hte("unique_text")
+    assert {j: res.pattern(j) for j in blocks} == {"text": "unique", "image": "none", "audio": "none"}
+    assert res.lomo["audio"][1] > 0.05
+
+
+def test_modality_hte_bystander_is_redundant_not_unique():
+    res, _ = _modal_hte("bystander")
+    assert res.lomi["image"][1] < 0.05
+    assert res.lomo["image"][1] > 0.05
+    assert res.pattern("text") == "unique"
+
+
+def test_modality_hte_synergy_has_no_marginal_signal():
+    res, blocks = _modal_hte("synergy")
+    for j in ("text", "image"):
+        assert res.lomi[j][1] > 0.05
+        assert res.pattern(j) == "synergistic"
+    assert res.pattern("audio") == "none"

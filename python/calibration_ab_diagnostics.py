@@ -18,10 +18,11 @@ from ab_diagnostics import (
     aipw_ate,
     dependence_shift_test,
     hte_drivers,
+    modality_hte_decomposition,
     modality_info_decomposition,
     split_balance_c2st,
 )
-from demo_ab_diagnostics import MODALITY_BLOCKS, simulate_modalities
+from demo_ab_diagnostics import MODALITY_BLOCKS, simulate_modal_hte, simulate_modalities
 
 ALPHA = 0.05
 
@@ -150,6 +151,44 @@ def calib_modality_labels(reps, seed):
     return rows
 
 
+MODAL_HTE_TRUTH = {
+    "none": {"text": "none", "image": "none", "audio": "none"},
+    "unique_text": {"text": "unique", "image": "none", "audio": "none"},
+    "bystander": {"text": "unique", "image": "redundant", "audio": "none"},
+    "redundant": {"text": "redundant", "image": "redundant", "audio": "none"},
+    "synergy": {"text": "synergistic", "image": "synergistic", "audio": "none"},
+}
+# Modalities with E[tau | X] = E[tau | X_{-m}] exactly; their raw LOMO test must hold its level.
+# In "redundant" the noisy copies carry a negligible but nonzero LOMO, so they are excluded.
+MODAL_HTE_LOMO_NULL = {
+    "none": ["text", "image", "audio"],
+    "unique_text": ["image", "audio"],
+    "bystander": ["image", "audio"],
+    "redundant": ["audio"],
+    "synergy": ["audio"],
+}
+
+
+def calib_modality_hte(reps, seed):
+    rows = []
+    lomo_null_hits = []
+    for scenario, expected in MODAL_HTE_TRUTH.items():
+        all_correct, share = [], []
+        for r in range(reps):
+            s = seed + 50_000 + r
+            X, Y, W, blocks = simulate_modal_hte(scenario, seed=s)
+            psi = aipw_ate(X, Y, W, propensity=0.5, n_folds=3, seed=r).pseudo_outcome
+            res = modality_hte_decomposition(X, psi, blocks, n_splits=3, seed=r)
+            labels = {j: res.pattern(j) for j in blocks}
+            all_correct.append(labels == expected)
+            lomo_null_hits += [res.lomo[j][1] < ALPHA for j in MODAL_HTE_LOMO_NULL[scenario]]
+            share.append({j: res.lomo[j][0] / max(res.joint[0], 1e-12) for j in blocks})
+        extra = {"median_lomo_share": {j: float(np.median([sh[j] for sh in share])) for j in expected}}
+        rows.append(summarise(f"modality HTE: all labels correct ({scenario}, n=6000)", all_correct, reps, extra))
+    rows.append(summarise("modality HTE: raw LOMO test rejects a null modality", lomo_null_hits, len(lomo_null_hits)))
+    return rows
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scale", type=float, default=1.0)
@@ -167,6 +206,7 @@ def main():
         "hte": lambda: calib_hte(n(150), n(60), args.seed),
         "dependence": lambda: calib_dependence(n(200), n(100), args.seed),
         "modality": lambda: calib_modality_labels(n(40), args.seed),
+        "modality_hte": lambda: calib_modality_hte(n(20), args.seed),
     }
     results = {}
     for name, fn in suites.items():
