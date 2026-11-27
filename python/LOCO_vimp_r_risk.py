@@ -29,9 +29,6 @@ from VIMP_DS_utils import (_as_1d, _as_2d,
 )
 
 
-os.chdir("/Users/heqiaoruan/Library/Mobile Documents/com~apple~CloudDocs/Documents/GitHub 2/Causal_Objective_Permutation_Test/Python") 
-
-
 """
 #R-learner weighted regression with those inputs:
 """
@@ -133,8 +130,8 @@ def vimp_loco_r_risk(X, Y, W, model_registry = MODEL_REGISTRY,
     n = X.shape[0]
     folds = make_folds(n, n_folds = n_folds, seed = seed)
     mu_hat, e_hat = cross_nuisance_fit(
-        X, Y, W, n_folds = n_folds, model_registry = MODEL_REGISTRY,
-        model_m = model_m, model_e = model_e)
+        X, Y, W, n_folds = n_folds, model_registry = model_registry,
+        model_m = model_m, model_e = model_e, seed = seed)
     e_hat = np.clip(e_hat, clip_e, 1 - clip_e)
     Y_tilde = Y - mu_hat
     W_tilde = W - e_hat
@@ -145,15 +142,14 @@ def vimp_loco_r_risk(X, Y, W, model_registry = MODEL_REGISTRY,
     #LOCO variable importance here, you need to refit the outcome model and propensity score modeo right?
     #Can be parallel:
     def calculate_individual_LOCO(i, X, Y, W, n_folds = n_folds,
-        model_registry = MODEL_REGISTRY,
+        model_registry = model_registry,
         model_m = model_m, 
-        model_e = model_e, clip_e = 0.01):
+        model_e = model_e, clip_e = clip_e):
         p = X.shape[1]
-        seed = 2000 + i
         X_loco = X[:, np.setdiff1d(np.arange(p), i)]
         mu_hat_i, e_hat_i = cross_nuisance_fit(
-            X_loco, Y, W, n_folds = n_folds, model_registry = MODEL_REGISTRY,
-            model_m = model_m, model_e = model_e
+            X_loco, Y, W, n_folds = n_folds, model_registry = model_registry,
+            model_m = model_m, model_e = model_e, seed = seed
         )
         e_hat_i = np.clip(e_hat_i, clip_e, 1 - clip_e)
         Y_tilde_i = Y - mu_hat_i
@@ -165,11 +161,11 @@ def vimp_loco_r_risk(X, Y, W, model_registry = MODEL_REGISTRY,
     with parallel_backend('threading', n_jobs = -1):
         loco_rrisk_list = Parallel(n_jobs = -1)(
             delayed(calculate_individual_LOCO)(i, X, Y, W, 
-            n_folds = n_folds, model_registry = MODEL_REGISTRY,
+            n_folds = n_folds, model_registry = model_registry,
             model_m = model_m, model_e = model_e) for i in range(k)
         )
     #output the LOCO VIMP for the R-risk and their corresponding rankings:
-    LOCO_RRisk_VIMP = loco_rrisk_list - observed_r_risk
+    LOCO_RRisk_VIMP = np.asarray(loco_rrisk_list, dtype = float) - observed_r_risk
     loco_rrisk_rank = np.argsort(-LOCO_RRisk_VIMP)
     return {
     'LOCO_VIMP_R': LOCO_RRisk_VIMP,

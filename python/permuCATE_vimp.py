@@ -18,7 +18,6 @@ from sklearn.model_selection import StratifiedKFold, KFold, train_test_split
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, GradientBoostingRegressor, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from benchmark_config import MODEL_REGISTRY
-from utils import _as_1d
 '''
 Utils functions:
 - _as_1d(X):           return the 1d array - from shape (p, ) to (p)
@@ -219,7 +218,7 @@ def permuCATE_vimp(
     W = _as_1d(W).astype(int)
     #split into training set and test set:
     X_train, X_test, W_train, W_test, Y_train, Y_test = train_test_split(
-        X, W, Y, test_size = 0.5, stratify = W
+        X, W, Y, test_size = test_size, stratify = W, random_state = seed
     )
     n, p = X.shape
     #specify the feature types:
@@ -248,9 +247,12 @@ def permuCATE_vimp(
         X_minus_j_test = np.delete(X_test, j, axis = 1)
         nu_spec = outputs['nu_model'][j]['model_nu']
         nu_fit = outputs['nu_model'][j]['model_nu_fit']
-        nu_hat = nu_spec['predict'](
+        nu_hat = np.asarray(nu_spec['predict'](
             nu_fit, X_minus_j_test
-        )
+        ), dtype = float)
+        #Classifiers return class probabilities; use the conditional mean of the label-encoded feature.
+        if nu_hat.ndim == 2:
+            nu_hat = nu_hat @ np.arange(nu_hat.shape[1], dtype = float)
         r_j = (X_test[:, j] - nu_hat).ravel()
         psi_k = np.zeros(n_perm, dtype = float)
         for k in range(n_perm):
