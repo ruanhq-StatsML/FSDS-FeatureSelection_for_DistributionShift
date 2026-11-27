@@ -1,0 +1,28 @@
+% Ultra-high-dimensional feature localization benchmark: results paragraph and table.
+% Requires \usepackage{booktabs} and \usepackage{amsmath} in the preamble.
+% Numbers come from results/ultrahigh_dim_p20n, results/ultrahigh_dim_p100n,
+% results/quant_concept_p20n, results/quant_concept_p100n and results/quant_concept_pn_scan.md.
+
+\paragraph{Ultra-high-dimensional benchmark.}
+We study feature localization for distribution shift when the number of candidate features greatly exceeds the sample size, with $n_{\text{exist}} = n_{\text{new}} = 500$ and $p/n \in \{20, 100\}$ (i.e., $p = 10{,}000$ and $p = 50{,}000$). Features follow an approximate factor model whose factor strength $\rho$ is swept over $\texttt{np.linspace(0, 0.95, 20)}$. Ten percent of the features are signal, and these are also the shifted features. The outcome is a mixture of nonlinear, non-monotone and interaction terms with heavy-tailed noise. The shift combines a nonlinear concept shift in $\mathbb{E}[Y\mid X]$ with a covariate shift in $X$ for half of the shifted features. All outcome and nuisance models are random forests. PermuCATE (with $n_{\text{perm}}=25$) and LOCO-R-risk are computed on all $p$ features. Table~\ref{tab:uhd_main} reports selection AUC, average precision (AP) and precision at $k = \#\{\text{shifted}\}$, averaged over the grid. Domain-classifier methods are the only ones that work in this regime. FSL-Net and DataFix reach an AUC of about $0.74$--$0.75$ at both dimensions, and their precision at $k$ is about $0.51$, which means they recover the covariate-shifted half of the shifted features. The random-forest domain classifier (RFDomain) is comparable at $p/n = 20$ but degrades to an AUC of $0.62$ at $p/n = 100$. The outcome-based methods, PermuCATE, LOCO-R-risk and SGShift L1, stay at chance level (AUC $0.50$--$0.53$), and their precision at $k$ is only $0.10$--$0.15$ against a chance level of $0.10$. Under pure concept drift, where $P(X)$ is unchanged and only the conditional mean of $Y$ moves, every method is at chance at both $p/n = 20$ and $p/n = 100$, with AUC between $0.49$ and $0.51$. A positive-control scan with the same design at $\rho = 0.5$ shows that the outcome-based methods do detect this drift in low dimension (AUC $0.84$--$0.89$ at $p/n = 0.2$), and that detectability decays monotonically with $p/n$ and reaches chance by $p/n \approx 4$. The failure in the ultra-high-dimensional regime is therefore a limitation of sample size rather than an implementation problem. These results are based on a single replicate per grid point. DataFix at $p/n = 100$ is evaluated on only three grid points, and FSL-Net at $p = 50{,}000$ is applied in feature blocks of size $5{,}000$.
+
+\begin{table}[t]
+\centering
+\caption{Ultra-high-dimensional selection performance (mean over the $\rho$ grid; $n_{\text{exist}} = n_{\text{new}} = 500$, 10\% signal features, covariate and concept shift). Chance precision at $k$ is $0.10$ at both dimensions, since the shifted fraction is 10\% in both cases. $^\dagger$DataFix was evaluated on 3 of the 20 grid points at $p/n = 100$.}
+\label{tab:uhd_main}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{2}{c}{AUC} & \multicolumn{2}{c}{AP} & \multicolumn{2}{c}{Precision@$k$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+Method & $p/n=20$ & $p/n=100$ & $p/n=20$ & $p/n=100$ & $p/n=20$ & $p/n=100$ \\
+\midrule
+FSL-Net              & 0.748 & 0.747 & 0.587 & 0.585 & 0.513 & 0.512 \\
+DataFix              & 0.743 & 0.741$^\dagger$ & 0.537 & 0.533$^\dagger$ & 0.513 & 0.509$^\dagger$ \\
+RFDomain             & 0.728 & 0.622 & 0.534 & 0.323 & 0.487 & 0.303 \\
+SGShift L1 (spec.)   & 0.532 & 0.515 & 0.120 & 0.111 & 0.154 & 0.125 \\
+SGShift L1 (misspec.)& 0.519 & 0.507 & 0.118 & 0.108 & 0.130 & 0.113 \\
+PermuCATE            & 0.506 & 0.500 & 0.103 & 0.101 & 0.107 & 0.103 \\
+LOCO-R-risk          & 0.498 & 0.496 & 0.114 & 0.108 & 0.121 & 0.118 \\
+\bottomrule
+\end{tabular}
+\end{table}
