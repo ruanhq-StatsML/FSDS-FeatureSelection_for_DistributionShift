@@ -434,10 +434,27 @@ def dependence_shift_test(X_ref, X_new, blocks, max_n=800, n_perm=200, seed=0):
     register; compare with per-block results to attribute them.
     """
     rng = np.random.default_rng(seed)
-    A = _rank_transform(_subsample_batch(np.asarray(X_ref, float), max_n, rng))
-    B = _rank_transform(_subsample_batch(np.asarray(X_new, float), max_n, rng))
-    res = modality_shift_decomposition(A, B, blocks, max_n=max_n, n_perm=n_perm, seed=seed)
-    return {"statistic": res.value[frozenset(blocks)], "p_value": res.p_joint}
+    A = _subsample_batch(np.asarray(X_ref, float), max_n, rng)
+    B = _subsample_batch(np.asarray(X_new, float), max_n, rng)
+    Z = np.vstack([A, B])
+    n_a = len(A)
+    labels = np.r_[np.ones(n_a), np.zeros(len(B))][:, None]
+
+    def _stat(rows):
+        Za, Zb = Z[rows[:n_a]], Z[rows[n_a:]]
+        U = np.vstack([_rank_transform(Za), _rank_transform(Zb)])
+        K = np.ones((len(U), len(U)))
+        for G in _block_grams(U, blocks).values():
+            K = K * G
+        return float(_mmd2_from_gram(K, labels)[0])
+
+    # The rank transform sits inside the permutation loop: permuting after
+    # it would compare batches whose marginals were already forced equal,
+    # which makes the null too wide and the test needlessly conservative.
+    observed = _stat(np.arange(len(Z)))
+    null = np.array([_stat(rng.permutation(len(Z))) for _ in range(n_perm)])
+    p_value = (1 + np.sum(null >= observed)) / (n_perm + 1)
+    return {"statistic": observed, "p_value": float(p_value)}
 
 
 @dataclass
@@ -529,6 +546,8 @@ class HTEReport:
     heterogeneity_gain: float
     heterogeneity_se: float
     heterogeneity_p_value: float
+    blp_slope: float
+    blp_slope_se: float
     importance: Dict[str, float] = field(default_factory=dict)
 
     def top(self, k=5):
@@ -545,12 +564,18 @@ def hte_drivers(
 ):
     """Which features drive treatment-effect heterogeneity (PermuCATE style).
 
-    tau(x) is regressed on the DR pseudo-outcome on one half. On the other
-    half the PO-risk E[(psi - tau_hat)^2] is compared with the constant-ATE
-    risk: a positive, significant gain means real heterogeneity rather than
-    noise. Feature importance is the PO-risk increase under conditional
-    permutation (X_j = nu_j(X_-j) + permuted residual), which avoids crediting
-    features that are merely correlated with the true drivers.
+    tau(x) is regressed on the DR pseudo-outcome on one half. The
+    heterogeneity test is the best-linear-predictor (BLP) slope test of
+    Chernozhukov et al. (generic ML inference on heterogeneous effects): on
+    the held-out half, psi is regressed on 1 and tau_hat - mean(tau_hat), and
+    H0: slope <= 0 is tested with a heteroskedasticity-robust SE. The
+    PO-risk gain over the constant-ATE predictor is kept as an effect size
+    only: as a test it pays for the variance of tau_hat and had about 10%
+    power at a 0.6 effect gap with n = 3000 in calibration.
+
+    Feature importance is the PO-risk increase under conditional permutation
+    (X_j = nu_j(X_-j) + permuted residual), which avoids crediting features
+    that are merely correlated with the true drivers.
     """
     X = np.asarray(X, float)
     psi = np.asarray(pseudo_outcome, float).ravel()
@@ -564,7 +589,19 @@ def hte_drivers(
     diff = loss_const - loss_tau
     gain = diff.mean()
     gain_se = diff.std(ddof=1) / np.sqrt(len(diff))
-    p_value = stats.norm.sf(gain / gain_se)
+
+    s = tau_te - tau_te.mean()
+    if np.var(s) < 1e-12:
+        slope, slope_se, p_value = 0.0, float("inf"), 1.0
+    else:
+        D = np.column_stack([np.ones_like(s), s])
+        coef, *_ = np.linalg.lstsq(D, psi_te, rcond=None)
+        resid = psi_te - D @ coef
+        bread = np.linalg.inv(D.T @ D)
+        meat = (D * resid[:, None] ** 2).T @ D
+        cov = bread @ meat @ bread * len(s) / (len(s) - 2)
+        slope, slope_se = float(coef[1]), float(np.sqrt(cov[1, 1]))
+        p_value = float(stats.norm.sf(slope / slope_se))
 
     rng = np.random.default_rng(seed)
     base = loss_tau.mean()
@@ -588,6 +625,8 @@ def hte_drivers(
         heterogeneity_gain=float(gain),
         heterogeneity_se=float(gain_se),
         heterogeneity_p_value=float(p_value),
+        blp_slope=slope,
+        blp_slope_se=slope_se,
         importance=importance,
     )
 
