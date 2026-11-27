@@ -206,6 +206,60 @@ class NoisyOracle:
         return self.fn(X) + self.sd * self.rng.standard_normal(len(X))
 
 
+_PROJ_CACHE = {}
+
+
+def factor_projection(X, k_fixed=None, k_max=20):
+    """Unsupervised principal-component projection of the pooled covariates (both batches, no outcomes).
+
+    The number of factors is chosen by the eigenvalue-ratio rule of Ahn and Horenstein unless `k_fixed` is given.
+    """
+    key = (id(X), k_fixed)
+    if key in _PROJ_CACHE:
+        return _PROJ_CACHE[key]
+    Xc = (X - X.mean(0)).astype(np.float32)
+    G = (Xc @ Xc.T).astype(np.float64)
+    ev, U = np.linalg.eigh(G)
+    ev, U = ev[::-1], U[:, ::-1]
+    if k_fixed is None:
+        ratio = ev[:k_max] / np.maximum(ev[1:k_max + 1], 1e-12)
+        k = int(np.argmax(ratio)) + 1
+    else:
+        k = k_fixed
+    V = (Xc.T @ U[:, :k].astype(np.float32)) / np.sqrt(ev[:k]).astype(np.float32)
+    proj = (X.mean(0).astype(np.float32), V.astype(np.float32), k)
+    _PROJ_CACHE.clear()
+    _PROJ_CACHE[key] = proj
+    return proj
+
+
+class FactorModel:
+    """Ridge / logistic regression on the leading principal components (factor-augmented nuisance)."""
+
+    def __init__(self, task, proj):
+        self.task, (self.mu_x, self.V, self.k) = task, proj
+
+    def _z(self, X):
+        return (np.asarray(X, dtype=np.float32) - self.mu_x) @ self.V
+
+    def fit(self, X, y):
+        from sklearn.linear_model import LogisticRegression, RidgeCV
+        Z = self._z(X)
+        self.zm, self.zs = Z.mean(0), Z.std(0) + 1e-6
+        Z = (Z - self.zm) / self.zs
+        if self.task == "reg":
+            self.m_ = RidgeCV(alphas=np.logspace(-1, 3, 20)).fit(Z, y)
+        else:
+            self.m_ = LogisticRegression(C=0.01, max_iter=500).fit(Z, y)
+        return self
+
+    def predict(self, X):
+        return self.m_.predict((self._z(X) - self.zm) / self.zs)
+
+    def predict_proba(self, X):
+        return self.m_.predict_proba((self._z(X) - self.zm) / self.zs)
+
+
 def _make_models(kind, seed, n_est, n):
     if kind == "mlp":
         return TorchMLP("reg", seed), TorchMLP("reg", seed + 1), TorchMLP("clf", seed + 2)
@@ -250,7 +304,11 @@ def permucate_fit_cf(X, Y, W, seed, kind, n_est, truth=None, clip_e=0.01, n_fold
         m0, m1, pi = np.zeros(len(Xtr)), np.zeros(len(Xtr)), np.zeros(len(Xtr))
         folds_models = []
         for k, (a, b) in enumerate(KFold(n_folds, shuffle=True, random_state=seed).split(Xtr)):
-            f0, f1, fp = _make_models("rf" if true_pi else kind, seed + 10 * k, n_est, len(a))
+            if kind.startswith("fa"):
+                pr = factor_projection(X, 10 if kind == "fa_k10" else None)
+                f0, f1, fp = FactorModel("reg", pr), FactorModel("reg", pr), FactorModel("clf", pr)
+            else:
+                f0, f1, fp = _make_models("rf" if true_pi else kind, seed + 10 * k, n_est, len(a))
             a0, a1 = a[Wtr[a] == 0], a[Wtr[a] == 1]
             f0.fit(Xtr[a0], Ytr[a0])
             f1.fit(Xtr[a1], Ytr[a1])
@@ -336,6 +394,8 @@ def main():
                 dt = time.perf_counter() - t1
                 rows.append({"p_over_n": float(r), "p": p, "rep": rep, "variant": v, "time_sec": dt,
                              "n_used_features": n_used, **diag, **m})
+                if v.startswith("fa"):
+                    print(f"    [{v}] #factors = {factor_projection(X, 10 if v == 'fa_k10' else None)[2]}", flush=True)
                 print(f"    {v}: AUC={m['AUC']:.3f} AP={m['AP']:.3f} prec@k={m['precision']:.3f} "
                       f"mu_R2={diag['mu_r2']:.2f} pi={diag['pi_mean']:.2f}±{diag['pi_sd']:.2f} ({dt:.0f}s)", flush=True)
                 pd.DataFrame(rows).to_csv(csv_path, index=False)

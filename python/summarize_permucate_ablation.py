@@ -8,12 +8,15 @@ import pandas as pd
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results")
 main = pd.read_csv(os.path.join(root, "permucate_mlp", "results_long.csv"))
 abl = pd.read_csv(os.path.join(root, "permucate_mlp_ablation", "results_long.csv"))
-d = pd.concat([main, abl], ignore_index=True)
-d = d[d.p_over_n.isin(abl.p_over_n.unique())]
+fa_path = os.path.join(root, "permucate_mlp_fa", "results_long.csv")
+fa = pd.read_csv(fa_path) if os.path.exists(fa_path) else abl.iloc[:0]
+d = pd.concat([main, abl, fa], ignore_index=True)
+d = d[d.p_over_n.isin(sorted(set(abl.p_over_n) | set(fa.p_over_n)))]
 
 order = [("oracle", "true mu, true pi"), ("oracle_rfpi", "true mu, RF pi"), ("oracle_r2_0.6", "true mu + noise, nominal R2 0.6"),
          ("oracle_r2_0.3", "true mu + noise, nominal R2 0.3"), ("oracle_r2_0.1", "true mu + noise, nominal R2 0.1"),
-         ("rf_truepi", "RF mu, true pi"), ("rf", "RF mu, RF pi"), ("mlp", "MLP mu, MLP pi")]
+         ("rf_truepi", "RF mu, true pi"), ("rf", "RF mu, RF pi"), ("mlp", "MLP mu, MLP pi"),
+         ("fa", "factor-augmented ridge/logistic (PCs, K by eigenvalue ratio)")]
 
 
 def se(x):
