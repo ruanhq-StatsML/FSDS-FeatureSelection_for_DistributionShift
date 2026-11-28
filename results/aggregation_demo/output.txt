@@ -1,0 +1,17 @@
+recall@K of the 40 drifting features (random baseline = 0.040); mean over 30 reps
+setting                                           nu marginal  plain|C     EB|C  grp-topK  grp-AUC
+block-concentrated drift, delta=0.15, iid X     1.09    0.168    0.168    0.227     0.206    0.702
+block-concentrated drift, delta=0.15, 5 observed factors  1.09    0.084    0.171    0.214     0.188    0.717
+block-concentrated drift, delta=0.25, iid X     1.81    0.323    0.323    0.500     0.472    0.860
+block-concentrated drift, delta=0.25, 5 observed factors  1.81    0.089    0.338    0.501     0.428    0.872
+block-concentrated drift, delta=0.40, iid X     2.90    0.550    0.550    0.770     0.748    0.958
+block-concentrated drift, delta=0.40, 5 observed factors  2.90    0.091    0.568    0.774     0.792    0.962
+uniform drift, delta=0.15, iid X                1.09    0.152    0.152    0.138     0.069    0.530
+uniform drift, delta=0.15, 5 observed factors   1.09    0.078    0.135    0.123     0.065    0.522
+uniform drift, delta=0.25, iid X                1.81    0.325    0.325    0.282     0.103    0.574
+uniform drift, delta=0.25, 5 observed factors   1.81    0.080    0.302    0.260     0.090    0.558
+uniform drift, delta=0.40, iid X                2.90    0.545    0.545    0.505     0.138    0.643
+uniform drift, delta=0.40, 5 observed factors   2.90    0.082    0.560    0.504     0.117    0.617
+share of ||drift||^2 inside top-5 PCs of X: 0.0011 (uniform direction would give 0.0010)
+share of ||drift||^2 inside top-10 PCs of X: 0.0023 (uniform direction would give 0.0020)
+share of ||drift||^2 inside top-50 PCs of X: 0.0112 (uniform direction would give 0.0100)
