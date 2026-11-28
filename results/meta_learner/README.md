@@ -164,3 +164,71 @@ Phase 4: generative models.
 Phase 5: write-up.
 - One paper section on the gate-localise-select-update-validate pipeline, with the failure regions
   (dense drift, scarce fresh data, retention) stated up front.
+
+## 5. Real data: SWE-bench Verified (run after the pre-registration in `real_data_preregistration.md`)
+
+Data: 500 instances (`princeton-nlp/SWE-bench_Verified`) and the `resolved` lists of all 135 leaderboard
+submissions in `SWE-bench/experiments/evaluation/verified` (resolve rate of the first and last submission:
+0.044 and 0.718). Features are instance-level only: 11 patch / test-patch / problem-length statistics, 600 TF-IDF terms
+of the problem statement (fit without outcomes), repo indicators. Built by `python/swebench_prepare.py`
+(`real_data/swebench/verified.npz`).
+
+### R1: online forecasting stream (`meta_real_swebench.py`, `real_swebench_stream.txt`)
+
+Task: predict whether the next submission resolves an instance, using per-sample prequential updates. Submissions
+are in chronological order, instances in random order within a submission, 8 random orders. Hyperparameters were
+tuned on submissions 20-59 only; reported on submissions 60-134 (log loss, mean within-submission AUC). The 95%
+intervals are bootstrap over submissions of the per-submission loss difference to ekf.
+
+| method | log loss | AUC | loss difference to ekf [95% CI] |
+|---|---|---|---|
+| static | 1.142 | 0.832 | +0.798 [+0.704, +0.885] |
+| ekf | 0.344 | 0.916 | 0 |
+| samp | 0.345 | 0.917 | +0.001 [-0.002, +0.003] |
+| attr | 0.345 | 0.915 | +0.001 [+0.000, +0.001] |
+| randK | 0.344 | 0.916 | -0.0004 [-0.0007, -0.0001] |
+
+Reading:
+
+- Any adaptation matters enormously (static is far worse), but that comes from the capability drift in the
+  intercept and the shared coefficients, which a uniform process noise already tracks.
+- Attribution-guided process noise gives no gain. It is slightly worse than ekf, and a random-K control is
+  slightly better than `attr`. This agrees with the pre-registered prediction (within +-3%, no significant gain),
+  and it is the dense-drift regime from E1.
+- Pre-registered prediction 3 was wrong in one respect: the flags land mostly on TF-IDF terms (`mod`, `ascii`,
+  `units`) and `sphinx-doc/sphinx`, not on size features. With the tuned threshold (zc=40, K=4) there are 0.9 flags
+  per check on average, so there is little evidence of a localised drift.
+- The task is partly instance memorisation: the same 500 instances recur in every submission, and 623 features
+  exceed the number of instances. The AUC of 0.92 should not be read as generalisation to new instances (see R2).
+
+### R2: leave-one-repo-out data selection (`meta_real_swebench_select.py`)
+
+Target repo = held-out repo; the fresh sample is n pairs from half of its instances, pools are the other 11 repos
+(2000 pairs each, one slice per repo), evaluation on the other half of the target's instances (all 135
+submissions). Instance-disjoint evaluation. 8 target repos with at least 19 instances, 10 repetitions, log loss
+(AUC). Raw tables are in `real_swebench_select_num.txt` and `real_swebench_select_all.txt`.
+
+| features | n fresh | fresh_only | pool_all | loss_filter | slice_discard | attr_partial | repos where attr beats pool_all |
+|---|---|---|---|---|---|---|---|
+| 11 size features | 150 | 0.678 (0.615) | 0.656 (0.659) | 0.656 (0.656) | 0.668 (0.630) | 0.657 (0.644) | 3/8 |
+| 11 size features | 600 | 0.664 (0.624) | 0.655 (0.659) | 0.655 (0.654) | 0.659 (0.626) | 0.655 (0.645) | 3/8 |
+| 623 features | 150 | 0.689 (0.529) | 0.690 (0.607) | 0.709 (0.595) | 0.689 (0.529) | 0.688 (0.564) | 6/8 |
+| 623 features | 600 | 0.691 (0.533) | 0.689 (0.596) | 0.704 (0.586) | 0.691 (0.533) | 0.690 (0.558) | 5/8 |
+
+Reading:
+
+- Pooling the other repos helps over fresh-only only with the 11 size features (0.656 versus 0.678 at n=150).
+  The pooled AUC is 0.66, so cross-repo transfer of difficulty exists but is modest.
+- `attr_partial` does not improve on `pool_all` on average: the mean log loss is within 0.002 in all four
+  settings. Per repo the difference ranges from -0.10 (scikit-learn, 11 features, n=150) to +0.08 (astropy), with
+  both signs; it wins 3 of 8 repos with the size features and 5-6 of 8 with all features. No standard errors were
+  computed for these per-repo differences (each target has only 10-110 test instances), so the win counts should
+  not be read as evidence. This matches the pre-registered prediction of a small average gain that may be negative;
+  the data give no support for a benefit.
+- Adding the 600 TF-IDF terms hurts: a pooled model fit on other repos reaches in-sample AUC 0.87 but target AUC
+  0.49-0.60 (a diagnostic run, not saved), while the 11 size features alone give 0.68-0.69. This is the
+  outcome-model failure that the next section treats: with p much larger than the effective sample, a flexible
+  outcome model memorises.
+- The regularisation grid is `lam` in {3, 30, 300, 3000}; most selected values sit at the upper edge (3000), so
+  the grid was too narrow and the tuning is not fully converged.
+- R3 (Electricity and Covertype streams) was not run.

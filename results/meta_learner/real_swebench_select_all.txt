@@ -1,0 +1,28 @@
+
+== features=all, fresh pairs n=150 per target repo; hp={'fresh_only': {'lam': 3000.0}, 'pool_all': {'lam': 3000.0}, 'slice_discard': {'lam': 3000.0}, 'attr_partial': {'lam': 3000.0}, 'loss_filter': {'lam': 3000.0, 'keep': 0.9}}
+log loss (AUC) on held-out target instances, 10 reps
+target                             fresh_only         pool_all      loss_filter    slice_discard     attr_partial
+django/django                 0.689 (0.556)  0.667 (0.642)  0.669 (0.637)  0.689 (0.556)  0.702 (0.578)
+sympy/sympy                   0.690 (0.557)  0.707 (0.585)  0.699 (0.600)  0.690 (0.557)  0.694 (0.564)
+sphinx-doc/sphinx             0.687 (0.495)  0.687 (0.571)  0.690 (0.575)  0.687 (0.495)  0.673 (0.536)
+matplotlib/matplotlib         0.708 (0.472)  0.745 (0.504)  0.799 (0.464)  0.708 (0.472)  0.734 (0.455)
+scikit-learn/scikit-learn     0.638 (0.511)  0.631 (0.631)  0.636 (0.608)  0.638 (0.511)  0.627 (0.551)
+astropy/astropy               0.718 (0.489)  0.740 (0.547)  0.797 (0.545)  0.718 (0.489)  0.729 (0.530)
+pydata/xarray                 0.696 (0.587)  0.650 (0.698)  0.678 (0.683)  0.696 (0.587)  0.678 (0.638)
+pytest-dev/pytest             0.685 (0.563)  0.696 (0.675)  0.700 (0.644)  0.685 (0.563)  0.667 (0.656)
+mean over repos               0.689 (0.529)  0.690 (0.607)  0.709 (0.595)  0.689 (0.529)  0.688 (0.564)
+attr_partial - pool_all log loss by repo: [0.036, -0.013, -0.014, -0.011, -0.004, -0.011, 0.028, -0.028]; repos where attr wins: 6/8
+
+== features=all, fresh pairs n=600 per target repo; hp={'fresh_only': {'lam': 3000.0}, 'pool_all': {'lam': 3000.0}, 'slice_discard': {'lam': 3000.0}, 'attr_partial': {'lam': 3000.0}, 'loss_filter': {'lam': 3000.0, 'keep': 0.9}}
+log loss (AUC) on held-out target instances, 10 reps
+target                             fresh_only         pool_all      loss_filter    slice_discard     attr_partial
+django/django                 0.684 (0.561)  0.667 (0.636)  0.660 (0.646)  0.684 (0.561)  0.690 (0.585)
+sympy/sympy                   0.687 (0.573)  0.706 (0.584)  0.699 (0.596)  0.687 (0.573)  0.690 (0.580)
+sphinx-doc/sphinx             0.681 (0.525)  0.673 (0.588)  0.672 (0.589)  0.681 (0.525)  0.671 (0.544)
+matplotlib/matplotlib         0.725 (0.459)  0.758 (0.487)  0.809 (0.456)  0.725 (0.459)  0.745 (0.451)
+scikit-learn/scikit-learn     0.634 (0.494)  0.617 (0.615)  0.631 (0.589)  0.634 (0.494)  0.625 (0.546)
+astropy/astropy               0.746 (0.472)  0.754 (0.522)  0.806 (0.499)  0.746 (0.472)  0.749 (0.501)
+pydata/xarray                 0.684 (0.624)  0.645 (0.679)  0.663 (0.690)  0.684 (0.624)  0.671 (0.650)
+pytest-dev/pytest             0.687 (0.558)  0.693 (0.660)  0.695 (0.623)  0.687 (0.558)  0.677 (0.611)
+mean over repos               0.691 (0.533)  0.689 (0.596)  0.704 (0.586)  0.691 (0.533)  0.690 (0.558)
+attr_partial - pool_all log loss by repo: [0.023, -0.016, -0.002, -0.013, 0.008, -0.004, 0.026, -0.017]; repos where attr wins: 5/8
