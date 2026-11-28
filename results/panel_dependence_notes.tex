@@ -1,0 +1,73 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+
+\title{Panel dependence and alpha decay: a short note}
+\author{FSDS benchmark working notes}
+\date{}
+
+\begin{document}
+\maketitle
+
+\paragraph{Status.}
+The Monte Carlo in Section~2 is \emph{verified} (\texttt{python/panel\_deff\_check.py}). Everything else is \emph{heuristic} or \emph{planned}: the panel simulation described in Section~3 is not implemented, and all benchmark results in the repository use i.i.d.\ rows.
+
+\section{The question}
+Alpha decay is pure concept drift: after a regime change the distribution of the (cross-sectionally standardized) characteristics $X$ is unchanged, but $\mathbb{E}[Y\mid X]$ changes for some characteristics. Domain classifiers therefore cannot see it (their AUC is $0.43$--$0.53$ in our scan), and the outcome-based methods (PermuCATE, LOCO-R-risk, SGShift) are the relevant ones.
+Our benchmark has $n=500$ independent rows per regime. A real panel has $N$ stocks over $T$ periods, and rows in the same period are dependent. How many independent observations does such a panel really contain?
+
+\section{Intuition and a check}
+Standardizing characteristics within each period removes market-wide shocks. What remains is that the \emph{slope itself} moves from period to period, $b_t = b + \tau\varepsilon_t$, and this shock is shared by all stocks in that period. Adding stocks averages out stock-level noise but not this shared shock. For one characteristic with unit variance and noise variance $\sigma^2$,
+\begin{equation}
+\operatorname{Var}(\hat b)\approx \frac{\sigma^2}{NT}+\frac{\tau^2}{T},
+\qquad
+n_{\text{eff}}=\frac{NT}{1+N\tau^2/\sigma^2}\;\longrightarrow\;\frac{T\sigma^2}{\tau^2}\quad (N\to\infty).
+\end{equation}
+The effective sample size is limited by the number of \emph{periods}, not stocks.
+
+\begin{table}[h]
+\centering
+\caption{Monte Carlo check ($b=0.3$, $\sigma=1$, 800--1500 replicates; the design effect is $NT/n_{\text{eff}}$).}
+\begin{tabular}{rrrrr}
+\toprule
+$N$ & $T$ & $\tau$ & design effect (MC / formula) & $n_{\text{eff}}$ \\
+\midrule
+500  & 12 & 0   & 1.0 / 1.0  & 6096 \\
+500  & 12 & 0.1 & 6.2 / 6.0  & 968 \\
+2000 & 12 & 0.1 & 22.0 / 21.0 & 1093 \\
+500  & 60 & 0.1 & 6.1 / 6.0  & 4907 \\
+500  & 60 & 0.3 & 40.3 / 46.0 & 744 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Quadrupling $N$ leaves $n_{\text{eff}}$ unchanged ($968$ vs.\ $1093$), while a longer sample helps ($T=12\to60$). Persistent characteristics (AR(1) with coefficient $0.9$) did not change the design effect when the slope shocks are independent over time. The formula overstates the design effect by about $15\%$ at $\tau=0.3$.
+\emph{Heuristic consequence:} $p/n$ in the benchmark should be read as $p/n_{\text{eff}}$, and a panel with $10^5$ rows can still be ultra-high-dimensional.
+
+\section{What the panel version should do (planned)}
+\begin{itemize}
+\item \textbf{Simulate} characteristics with fixed stock loadings, AR(1) factor components and within-period rank standardization; returns with period-varying slopes, a residual factor structure and heavy-tailed noise; alpha decay (decay, sign flip, shape change) for 5\% of the characteristics at a known change point. Calibrate $\tau$ to the dispersion of Fama--MacBeth slopes rather than choosing it freely.
+\item \textbf{Cross-fit by time blocks with an embargo}, and \textbf{permute within periods}. A random row split leaks information between rows of the same or adjacent periods, so the current i.i.d.\ results are probably optimistic.
+\item \textbf{Expect power to depend on $T$ and $\tau$, not $N$.} For $\tau=0.1$ and $T_{\text{old}}=T_{\text{new}}=36$, the standard error of a before--after slope difference is about $\sqrt{0.02/36}\approx0.024$; this is an order-of-magnitude argument that has not been simulated.
+\end{itemize}
+
+\section{Limitations}
+\begin{itemize}
+\item The panel simulation does not exist yet; claims about sparse high-dimensional selection under dependence are hypotheses. The Monte Carlo covers a single slope, independent slope shocks and homoskedastic noise.
+\item Benchmark results: i.i.d.\ rows, one data-generating process, few replicates (five grid points with one replicate for the main pure concept-drift run; five replicates in the nuisance study, AUC standard errors $0.02$--$0.06$). Differences below about $0.05$--$0.1$ AUC are not resolved.
+\item The change point is known; no real data, transaction costs or look-ahead control; $\tau$ is not calibrated.
+\item In the nuisance study the oracle also degrades with $p/n$, so limited outcome-regression accuracy explains most, but not all, of the loss.
+\end{itemize}
+
+\section{Planned improvements}
+\begin{enumerate}
+\item Implement the panel simulation with block cross-fitting and quantify the optimism of the row-wise split.
+\item Scan $p/n_{\text{eff}}$ over $(N,T,\tau)$ and test whether, at fixed $p$, performance depends mainly on $T$ and $\tau$.
+\item Test drift across periods (Fama--MacBeth style with HAC errors) and calibrate error control with block permutations of the regime label.
+\item Detect drift for characteristic families first, then within families, with sample splitting.
+\item Handle an unknown change point (CUSUM-type scan), and add replicates and confidence intervals to the main run.
+\item Validate on public anomaly characteristics with documented post-publication decay.
+\end{enumerate}
+
+\end{document}

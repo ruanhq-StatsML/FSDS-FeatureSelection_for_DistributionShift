@@ -1,0 +1,54 @@
+% Ultra-high-dimensional feature localization benchmark: results paragraph and table.
+% Requires \usepackage{booktabs}, \usepackage{multirow} and \usepackage{amsmath} in the preamble.
+% Numbers come from results/ultrahigh_dim_p20n, results/ultrahigh_dim_p100n,
+% results/quant_concept_p20n, results/quant_concept_p100n, results/quant_concept_pn_scan.md and results/permucate_mlp.
+
+\paragraph{Ultra-high-dimensional benchmark.}
+We study feature localization for distribution shift when the number of candidate features greatly exceeds the sample size, with $n_{\text{exist}} = n_{\text{new}} = 500$ and $p/n \in \{20, 100\}$ (i.e., $p = 10{,}000$ and $p = 50{,}000$). Features follow an approximate factor model whose factor strength $\rho$ is swept over $\texttt{np.linspace(0, 0.95, 20)}$. Ten percent of the features are signal, and these are also the shifted features. The outcome is a mixture of nonlinear, non-monotone and interaction terms with heavy-tailed noise. The shift combines a nonlinear concept shift in $\mathbb{E}[Y\mid X]$ with a covariate shift in $X$ for half of the shifted features. All outcome and nuisance models are random forests. PermuCATE (with $n_{\text{perm}}=25$) and LOCO-R-risk are computed on all $p$ features. Table~\ref{tab:uhd_main} reports selection AUC, average precision (AP) and precision at $k = \#\{\text{shifted}\}$, averaged over the grid. Domain-classifier methods are the only ones that work in this regime. FSL-Net and DataFix reach an AUC of about $0.74$--$0.75$ at both dimensions, and their precision at $k$ is about $0.51$, which means they recover the covariate-shifted half of the shifted features. The random-forest domain classifier (RFDomain) is comparable at $p/n = 20$ but degrades to an AUC of $0.62$ at $p/n = 100$. The outcome-based methods, PermuCATE, LOCO-R-risk and SGShift L1, stay at chance level (AUC $0.50$--$0.53$), and their precision at $k$ is only $0.10$--$0.15$ against a chance level of $0.10$. Under pure concept drift, where $P(X)$ is unchanged and only the conditional mean of $Y$ moves, every method is at chance at both $p/n = 20$ and $p/n = 100$, with AUC between $0.49$ and $0.51$. A positive-control scan with the same design at $\rho = 0.5$ shows that the outcome-based methods do detect this drift in low dimension (AUC $0.84$--$0.89$ at $p/n = 0.2$), and that detectability decays monotonically with $p/n$ and reaches chance by $p/n \approx 4$. The failure in the ultra-high-dimensional regime is therefore a limitation of sample size rather than an implementation problem. These results are based on a single replicate per grid point. DataFix at $p/n = 100$ is evaluated on only three grid points, and FSL-Net at $p = 50{,}000$ is applied in feature blocks of size $5{,}000$.
+
+\begin{table}[t]
+\centering
+\caption{Ultra-high-dimensional selection performance (mean over the $\rho$ grid; $n_{\text{exist}} = n_{\text{new}} = 500$, 10\% signal features, covariate and concept shift). Chance precision at $k$ is $0.10$ at both dimensions, since the shifted fraction is 10\% in both cases. $^\dagger$DataFix was evaluated on 3 of the 20 grid points at $p/n = 100$.}
+\label{tab:uhd_main}
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{2}{c}{AUC} & \multicolumn{2}{c}{AP} & \multicolumn{2}{c}{Precision@$k$} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+Method & $p/n=20$ & $p/n=100$ & $p/n=20$ & $p/n=100$ & $p/n=20$ & $p/n=100$ \\
+\midrule
+FSL-Net              & 0.748 & 0.747 & 0.587 & 0.585 & 0.513 & 0.512 \\
+DataFix              & 0.743 & 0.741$^\dagger$ & 0.537 & 0.533$^\dagger$ & 0.513 & 0.509$^\dagger$ \\
+RFDomain             & 0.728 & 0.622 & 0.534 & 0.323 & 0.487 & 0.303 \\
+SGShift L1 (spec.)   & 0.532 & 0.515 & 0.120 & 0.111 & 0.154 & 0.125 \\
+SGShift L1 (misspec.)& 0.519 & 0.507 & 0.118 & 0.108 & 0.130 & 0.113 \\
+PermuCATE            & 0.506 & 0.500 & 0.103 & 0.101 & 0.107 & 0.103 \\
+LOCO-R-risk          & 0.498 & 0.496 & 0.114 & 0.108 & 0.121 & 0.118 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{PermuCATE under pure concept drift at very high $p/n$: random-forest versus MLP nuisance models.}
+To isolate the role of the nuisance models, we simulate pure concept drift, $Y_{\text{old}} = X\beta + \varepsilon$ and $Y_{\text{new}} = X\beta + f(X_S) + \varepsilon$, with the same approximate factor model for $X$ in both batches (so that $P(X)$ is unchanged). The stable coefficient vector $\beta$ has $100$ nonzero entries, and $f$ is a nonlinear function (sinusoidal, saturating, ReLU, quadratic and signed-root terms, pairwise products, and squashed group-sum interactions) of $|S| = 10$ perturbation features, with $\operatorname{Var}(X\beta) = 2$ and $\operatorname{Var}(f) = 8$. We let $p/n \in \{20, 100, 200, 500\}$ with $n = 500$ per batch (up to $p = 250{,}000$), use five replicates, and score all $p$ features with PermuCATE ($n_{\text{perm}} = 25$). The outcome and propensity models are either random forests or one-hidden-layer MLPs, both cross-fitted; an oracle that uses the true outcome regressions and $\pi = 1/2$ serves as a diagnostic upper bound.
+
+Table~\ref{tab:uhd_mlp} shows that the selection performance of PermuCATE decays steadily with $p/n$ for both nuisance choices, and that the two are statistically indistinguishable (the paired AUC difference between the random forest and the MLP is $0.07 \pm 0.06$, $0.00 \pm 0.02$ and $0.02 \pm 0.02$ at $p/n = 20, 100, 500$). In both cases the out-of-sample $R^2$ of the outcome model against the true regression stays between $0.05$ and $0.15$, whereas the oracle remains clearly better (AUC $0.64$ at $p/n = 500$). Several diagnostics indicate that the decay is driven by the accuracy of the outcome regressions, which is limited by the sample size, rather than by the choice of the model class. (i)~Relative to chance, the learned random-forest nuisances lose $29\%$, $72\%$ and $86\%$ of the oracle's excess AUC at $p/n = 20, 100, 500$. (ii)~Replacing only the propensity model by the known $\pi = 1/2$ leaves the AUC essentially unchanged ($0.74$, $0.62$, $0.52$, against $0.76$, $0.58$, $0.52$), and a learned propensity combined with the true outcome regressions stays close to the oracle ($0.84$, $0.74$, $0.65$), so the loss originates in the outcome regressions. (iii)~Corrupting the true regressions with independent Gaussian noise yields an AUC that increases monotonically with the nuisance $R^2$, and noise at the $R^2 \approx 0.1$ level reproduces the AUC of the learned models ($0.68$, $0.60$, $0.51$). (iv)~A cross-validated lasso, which uses the correct sparse linear model class, attains an out-of-sample $R^2$ of only $0.17$ at $p/n = 20$ and $0.09$ at $p/n = 100$ with the cross-fitting sample size of $125$ observations per arm, which is consistent with the sample-size requirement $s\log(p/s)$ of sparse regression ($s = 100$) being several times larger than the available sample. The oracle itself also deteriorates with $p/n$ (AUC $0.86 \to 0.64$), so part of the decline reflects the difficulty of the CATE and permutation stages and is not attributable to the nuisances. These findings are, we believe, the expected behavior in an ultra-high-dimensional factor-structured regime with few observations, and they are confined to this design (one data-generating process and five replicates, with standard errors of $0.02$ to $0.06$ in AUC).
+
+\begin{table}[t]
+\centering
+\caption{PermuCATE under pure concept drift, random-forest versus MLP nuisance models (mean $\pm$ s.e. over 5 replicates; $|S| = 10$ shifted features; oracle uses the true nuisances and is a diagnostic upper bound). The chance level of AUC is $0.5$ and that of AP is $10/p$ ($\leq 10^{-3}$).}
+\label{tab:uhd_mlp}
+\begin{tabular}{llcccc}
+\toprule
+ & & $p/n=20$ & $p/n=100$ & $p/n=200$ & $p/n=500$ \\
+\midrule
+\multirow{3}{*}{AUC}
+ & RF  & $0.758 \pm 0.031$ & $0.582 \pm 0.012$ & $0.580 \pm 0.025$ & $0.520 \pm 0.020$ \\
+ & MLP & $0.684 \pm 0.038$ & $0.581 \pm 0.019$ & $0.580 \pm 0.025$ & $0.500 \pm 0.016$ \\
+ & Oracle & $0.861 \pm 0.034$ & $0.788 \pm 0.029$ & $0.700 \pm 0.035$ & $0.640 \pm 0.037$ \\
+\midrule
+\multirow{3}{*}{AP}
+ & RF  & $0.175 \pm 0.040$ & $0.100 \pm 0.033$ & $0.101 \pm 0.031$ & $0.010 \pm 0.010$ \\
+ & MLP & $0.220 \pm 0.044$ & $0.108 \pm 0.018$ & $0.071 \pm 0.020$ & $0.000 \pm 0.000$ \\
+ & Oracle & $0.560 \pm 0.049$ & $0.345 \pm 0.059$ & $0.292 \pm 0.066$ & $0.191 \pm 0.044$ \\
+\bottomrule
+\end{tabular}
+\end{table}

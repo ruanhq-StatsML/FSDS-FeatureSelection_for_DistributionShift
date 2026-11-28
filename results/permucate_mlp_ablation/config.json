@@ -1,0 +1,27 @@
+{
+  "p_over_n": [
+    20.0,
+    100.0,
+    500.0
+  ],
+  "n": 500,
+  "s": 10,
+  "b": 100,
+  "lin_var": 2.0,
+  "shift_var": 8.0,
+  "rho": 0.3,
+  "variants": [
+    "rf_truepi",
+    "oracle_rfpi",
+    "oracle_r2_0.1",
+    "oracle_r2_0.3",
+    "oracle_r2_0.6"
+  ],
+  "reps": 5,
+  "seed": 7,
+  "tau_mtry": "0.1",
+  "n_estimators": 100,
+  "n_perm": 25,
+  "n_neighbors": 20,
+  "out": "../results/permucate_mlp_ablation"
+}

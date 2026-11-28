@@ -1,5 +1,6 @@
 #List of the synthetic data generating processes for injecting into the datasets,
 #Including simulations for covariate shift and concept drift
+import itertools
 import numpy as np
 import pandas as pd
 from scipy.linalg import toeplitz
@@ -57,9 +58,9 @@ def generate_covariate_shift_dgp(n=2000, p=20, gamma=0.0, rho=0.0, seed=None):
 
 
 def nonlinear_delta(X, rng, scale=1.0):
-	'''
-	Nonlinear coefficients here:
-	'''
+    '''
+    Nonlinear coefficients here:
+    '''
     delta = np.zeros(X.shape[0], dtype=float)
     active = SHIFTED_FEATURES
     for j in active:

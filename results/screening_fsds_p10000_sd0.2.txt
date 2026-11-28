@@ -1,0 +1,48 @@
+rep 0 done
+rep 1 done
+rep 2 done
+rep 3 done
+rep 4 done
+rep 5 done
+rep 6 done
+rep 7 done
+rep 8 done
+rep 9 done
+
+== p=10000, n=1000/batch, rho=0.5, K=100: mean drift recall by type (10 reps)
+                size  recall  rec_decay  rec_emerge  rec_reverse  rec_nonmono  rec_inter
+method                                                                                  
+csis_inter       1.2    0.00       0.00        0.00         0.00         0.00       0.00
+csis_np_union   91.0    0.08       0.14        0.18         0.00         0.04       0.00
+csis_pooled    100.0    0.04       0.12        0.04         0.02         0.00       0.00
+csis_ref       100.0    0.09       0.28        0.00         0.12         0.02       0.00
+csis_tgt       100.0    0.07       0.02        0.24         0.04         0.04       0.00
+csis_union     100.0    0.11       0.22        0.18         0.08         0.04       0.00
+drift_aware    100.0    0.11       0.20        0.18         0.10         0.04       0.00
+isis_union      99.3    0.09       0.16        0.20         0.04         0.04       0.00
+np_union       100.0    0.04       0.08        0.10         0.00         0.02       0.00
+oracle         100.0    1.00       1.00        1.00         1.00         1.00       1.00
+random         100.0    0.00       0.00        0.00         0.00         0.00       0.00
+sis_ref        100.0    0.02       0.04        0.00         0.02         0.02       0.02
+sis_tgt        100.0    0.03       0.04        0.06         0.02         0.02       0.00
+sis_union      100.0    0.03       0.06        0.02         0.04         0.04       0.00
+
+== p=10000, n=1000/batch, rho=0.5, K=500: mean drift recall by type (10 reps)
+                size  recall  rec_decay  rec_emerge  rec_reverse  rec_nonmono  rec_inter
+method                                                                                  
+csis_inter      22.6    0.01       0.02        0.00         0.02         0.00       0.00
+csis_np_union  443.2    0.18       0.30        0.28         0.22         0.08       0.00
+csis_pooled    500.0    0.13       0.28        0.24         0.04         0.06       0.02
+csis_ref       500.0    0.14       0.40        0.04         0.14         0.06       0.02
+csis_tgt       500.0    0.15       0.08        0.44         0.12         0.06       0.05
+csis_union     500.0    0.22       0.40        0.38         0.20         0.06       0.02
+drift_aware    500.0    0.21       0.36        0.36         0.20         0.06       0.02
+isis_union     500.0    0.19       0.32        0.26         0.20         0.10       0.05
+np_union       500.0    0.13       0.20        0.22         0.12         0.08       0.00
+oracle         500.0    1.00       1.00        1.00         1.00         1.00       1.00
+random         500.0    0.03       0.04        0.02         0.04         0.02       0.05
+sis_ref        500.0    0.08       0.14        0.04         0.10         0.06       0.02
+sis_tgt        500.0    0.10       0.06        0.24         0.06         0.08       0.02
+sis_union      500.0    0.09       0.14        0.10         0.08         0.08       0.05
+
+screening seconds per replicate (scan of both batches): {'sec_sis': 0.3, 'sec_csis': 0.3, 'sec_np': 1.8}

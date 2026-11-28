@@ -1,0 +1,10 @@
+n=500 per batch, p=10000 (p/n=20), methods=['rf_domain', 'permucate', 'loco_r_risk', 'sgshift_l1_spec', 'sgshift_l1_misspec', 'datafix', 'fslnet']
+[rep 0 grid 10/19] rho=0.500 #shifted=500 (data 0s)
+    rf_domain: 2s
+    permucate: 7s
+    loco_r_risk: 42s
+    sgshift_l1: 31s
+    datafix: 5s
+--> FSLNet loaded and set to eval().
+    fslnet: 29s
+  done in 115s | AUC rf_domain:0.49, permucate:0.51, loco_r_risk:0.53, sgshift_l1_spec:0.51, sgshift_l1_misspec:0.51, datafix:0.50, fslnet:0.51

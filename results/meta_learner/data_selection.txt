@@ -1,0 +1,81 @@
+
+== stale slice: 5 flipped signals of 20; noisy slice: False; fresh n=150 (p=500); hp={'fresh_only': {'lam': 300.0}, 'pool_all': {'lam': 300.0}, 'slice_discard': {'lam': 300.0}, 'attr_partial': {'lam': 300.0}, 'oracle_F': {'lam': 30.0}, 'oracle': {'lam': 30.0}, 'loss_filter': {'lam': 300.0, 'keep': 0.9}}
+fresh_only     excess KL 0.1520 (0.0019)
+pool_all       excess KL 0.1692 (0.0055)
+loss_filter    excess KL 0.1610 (0.0052)
+slice_discard  excess KL 0.1490 (0.0030)
+attr_partial   excess KL 0.0952 (0.0027)
+oracle_F       excess KL 0.0587 (0.0013)
+oracle         excess KL 0.0587 (0.0013)
+
+== stale slice: 5 flipped signals of 20; noisy slice: False; fresh n=300 (p=500); hp={'fresh_only': {'lam': 300.0}, 'pool_all': {'lam': 300.0}, 'slice_discard': {'lam': 300.0}, 'attr_partial': {'lam': 300.0}, 'oracle_F': {'lam': 30.0}, 'oracle': {'lam': 30.0}, 'loss_filter': {'lam': 300.0, 'keep': 0.9}}
+fresh_only     excess KL 0.1353 (0.0018)
+pool_all       excess KL 0.1622 (0.0055)
+loss_filter    excess KL 0.1485 (0.0046)
+slice_discard  excess KL 0.1163 (0.0047)
+attr_partial   excess KL 0.0800 (0.0023)
+oracle_F       excess KL 0.0552 (0.0012)
+oracle         excess KL 0.0552 (0.0012)
+
+== stale slice: 5 flipped signals of 20; noisy slice: False; fresh n=600 (p=500); hp={'fresh_only': {'lam': 300.0}, 'pool_all': {'lam': 300.0}, 'slice_discard': {'lam': 300.0}, 'attr_partial': {'lam': 300.0}, 'oracle_F': {'lam': 30.0}, 'oracle': {'lam': 30.0}, 'loss_filter': {'lam': 300.0, 'keep': 0.9}}
+fresh_only     excess KL 0.1140 (0.0013)
+pool_all       excess KL 0.1504 (0.0049)
+loss_filter    excess KL 0.1286 (0.0035)
+slice_discard  excess KL 0.0864 (0.0014)
+attr_partial   excess KL 0.0731 (0.0013)
+oracle_F       excess KL 0.0518 (0.0009)
+oracle         excess KL 0.0518 (0.0009)
+
+== stale slice: 5 flipped signals of 20; noisy slice: True; fresh n=150 (p=500); hp={'fresh_only': {'lam': 300.0}, 'pool_all': {'lam': 300.0}, 'slice_discard': {'lam': 300.0}, 'attr_partial': {'lam': 300.0}, 'oracle_F': {'lam': 30.0}, 'oracle': {'lam': 30.0}, 'loss_filter': {'lam': 300.0, 'keep': 0.9}}
+fresh_only     excess KL 0.1517 (0.0019)
+pool_all       excess KL 0.1379 (0.0034)
+loss_filter    excess KL 0.1175 (0.0021)
+slice_discard  excess KL 0.1487 (0.0031)
+attr_partial   excess KL 0.1022 (0.0026)
+oracle_F       excess KL 0.0836 (0.0020)
+oracle         excess KL 0.0545 (0.0008)
+
+== stale slice: 5 flipped signals of 20; noisy slice: True; fresh n=300 (p=500); hp={'fresh_only': {'lam': 300.0}, 'pool_all': {'lam': 300.0}, 'slice_discard': {'lam': 300.0}, 'attr_partial': {'lam': 300.0}, 'oracle_F': {'lam': 30.0}, 'oracle': {'lam': 30.0}, 'loss_filter': {'lam': 300.0, 'keep': 0.9}}
+fresh_only     excess KL 0.1353 (0.0016)
+pool_all       excess KL 0.1361 (0.0035)
+loss_filter    excess KL 0.1108 (0.0023)
+slice_discard  excess KL 0.1162 (0.0046)
+attr_partial   excess KL 0.0893 (0.0022)
+oracle_F       excess KL 0.0814 (0.0019)
+oracle         excess KL 0.0514 (0.0011)
+
+== stale slice: 5 flipped signals of 20; noisy slice: True; fresh n=600 (p=500); hp={'fresh_only': {'lam': 300.0}, 'pool_all': {'lam': 300.0}, 'slice_discard': {'lam': 300.0}, 'attr_partial': {'lam': 300.0}, 'oracle_F': {'lam': 30.0}, 'oracle': {'lam': 30.0}, 'loss_filter': {'lam': 300.0, 'keep': 0.9}}
+fresh_only     excess KL 0.1146 (0.0011)
+pool_all       excess KL 0.1285 (0.0034)
+loss_filter    excess KL 0.0971 (0.0016)
+slice_discard  excess KL 0.0869 (0.0014)
+attr_partial   excess KL 0.0825 (0.0012)
+oracle_F       excess KL 0.0754 (0.0016)
+oracle         excess KL 0.0479 (0.0007)
+
+== stale slice: 0 flipped signals of 20; noisy slice: True; fresh n=150 (p=500); hp={'fresh_only': {'lam': 300.0}, 'pool_all': {'lam': 3.0}, 'slice_discard': {'lam': 300.0}, 'attr_partial': {'lam': 300.0}, 'oracle_F': {'lam': 3.0}, 'oracle': {'lam': 30.0}, 'loss_filter': {'lam': 300.0, 'keep': 0.9}}
+fresh_only     excess KL 0.1489 (0.0021)
+pool_all       excess KL 0.0649 (0.0013)
+loss_filter    excess KL 0.0784 (0.0011)
+slice_discard  excess KL 0.1409 (0.0039)
+attr_partial   excess KL 0.0771 (0.0023)
+oracle_F       excess KL 0.0649 (0.0013)
+oracle         excess KL 0.0436 (0.0005)
+
+== stale slice: 0 flipped signals of 20; noisy slice: True; fresh n=300 (p=500); hp={'fresh_only': {'lam': 300.0}, 'pool_all': {'lam': 3.0}, 'slice_discard': {'lam': 300.0}, 'attr_partial': {'lam': 30.0}, 'oracle_F': {'lam': 3.0}, 'oracle': {'lam': 30.0}, 'loss_filter': {'lam': 300.0, 'keep': 0.9}}
+fresh_only     excess KL 0.1349 (0.0016)
+pool_all       excess KL 0.0627 (0.0010)
+loss_filter    excess KL 0.0704 (0.0008)
+slice_discard  excess KL 0.1211 (0.0041)
+attr_partial   excess KL 0.0684 (0.0026)
+oracle_F       excess KL 0.0627 (0.0010)
+oracle         excess KL 0.0406 (0.0005)
+
+== stale slice: 0 flipped signals of 20; noisy slice: True; fresh n=600 (p=500); hp={'fresh_only': {'lam': 300.0}, 'pool_all': {'lam': 3.0}, 'slice_discard': {'lam': 300.0}, 'attr_partial': {'lam': 30.0}, 'oracle_F': {'lam': 3.0}, 'oracle': {'lam': 30.0}, 'loss_filter': {'lam': 300.0, 'keep': 0.9}}
+fresh_only     excess KL 0.1145 (0.0009)
+pool_all       excess KL 0.0608 (0.0012)
+loss_filter    excess KL 0.0624 (0.0005)
+slice_discard  excess KL 0.0836 (0.0029)
+attr_partial   excess KL 0.0564 (0.0009)
+oracle_F       excess KL 0.0608 (0.0012)
+oracle         excess KL 0.0392 (0.0005)

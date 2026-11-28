@@ -1,0 +1,27 @@
+
+== abrupt  (p=1000, window=4000 obs, tuned cfg: {'uniform': (300, 0), 'scratch': (300, 0), 'attr': (30, 300, 8)})
+method      excess logloss    AUC  top-K attribution: precision / recall
+static       0.550 (0.029)  0.590  
+scratch      0.101 (0.001)  0.780  
+uniform      0.114 (0.001)  0.796  
+random       0.121 (0.001)  0.793  
+attr         0.107 (0.001)  0.805  0.21 / 0.42
+oracle       0.089 (0.001)  0.814  
+
+== gradual  (p=1000, window=4000 obs, tuned cfg: {'uniform': (3000, 0), 'scratch': (300, 0), 'attr': (30, 300, 8)})
+method      excess logloss    AUC  top-K attribution: precision / recall
+static       0.131 (0.006)  0.804  
+scratch      0.076 (0.001)  0.819  
+uniform      0.056 (0.002)  0.841  
+random       0.072 (0.001)  0.838  
+attr         0.078 (0.001)  0.836  0.14 / 0.29
+oracle       0.063 (0.001)  0.843  
+
+== null  (p=1000, window=4000 obs, tuned cfg: {'uniform': (3000, 0), 'scratch': (300, 0), 'attr': (30, 300, 8)})
+method      excess logloss    AUC  top-K attribution: precision / recall
+static       0.074 (0.001)  0.827  
+scratch      0.069 (0.001)  0.813  
+uniform      0.037 (0.000)  0.844  
+random       0.068 (0.001)  0.832  
+attr         0.078 (0.001)  0.828  
+oracle       0.061 (0.001)  0.835  
