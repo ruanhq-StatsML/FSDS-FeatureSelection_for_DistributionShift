@@ -36,3 +36,57 @@ PermuCATE (oracle nuisances)    & 0.861 & 0.788 & 0.640 \\
 
 \paragraph{Limitations.}
 One data-generating process per design; one replicate per grid point in the main benchmark (the grid points differ in factor strength and are not independent replicates) and five replicates in the concept-drift study, with standard errors of $0.02$--$0.06$ in AUC, so differences below about $0.05$--$0.1$ are not resolved. The stability of FSL-Net and DataFix is shown at two values of $p/n$ only. Rows are i.i.d.; in a real stock--month panel, dependence across stocks within a period lowers the effective sample size, so the decline there may be steeper.
+
+\section{Screening before FSDS: when does lowering $p$ help?}
+\label{app:screening}
+
+\paragraph{Design.}
+Each labelled batch is screened separately; the two batches are combined at one total budget $K$. Methods: marginal SIS (\texttt{sis}); conditional SIS (\texttt{csis}), where $X$ and $y$ are residualised on the ten leading principal components of each batch; quantile-bin NIS (5 bins); centred-square scan (\texttt{sq}); one ISIS round; and the drift-aware union of the top $K/3$ features under $U_j=\max(G_{0j},G_{1j})$, $D_j=|G_{0j}-G_{1j}|$ and $C_j=|\hat\beta_{0j}-\hat\beta_{1j}|$. \texttt{nl} is the union of the \texttt{csis}, NIS and \texttt{sq} unions at $K/3$ each. The stage-two FSDS is the cross-fitted PermuCATE with random-forest nuisances on the retained columns. Features that are not retained are ranked last when the AUC is computed over all $p$. The data-generating process has a ten-factor correlation structure, 200 dense weak stable signals (SNR $0.15$), and 24 drift coordinates in five groups (decay, emerge, reverse, non-monotone, interaction) of equal drift energy. Recall is the share of the 24 drift coordinates retained.
+
+\begin{table}[h]
+\centering
+\caption{Drift-support recall of screening, $p=10^4$, $K=500$ (random retention: $0.05$). Mean over the 27 grid cells $n\in\{500,1000,2000\}\times\rho\in\{0.2,0.5,0.8\}\times$ drift energy $\in\{0.2,0.5,1.0\}$, five replicates per cell; each column averages over the other factors. Linear-drift groups only reach the first three drift types: the best possible recall of a linear screen is $15/24=0.63$.}
+\label{tab:screen-grid}
+\small
+\begin{tabular}{lccc ccc ccc}
+\toprule
+ & \multicolumn{3}{c}{drift energy} & \multicolumn{3}{c}{$n$ per batch} & \multicolumn{3}{c}{$\rho$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+method & 0.2 & 0.5 & 1.0 & 500 & 1000 & 2000 & 0.2 & 0.5 & 0.8 \\
+\midrule
+\texttt{sis} union     & 0.15 & 0.23 & 0.29 & 0.15 & 0.23 & 0.28 & 0.39 & 0.19 & 0.09 \\
+\texttt{csis} pooled   & 0.13 & 0.22 & 0.29 & 0.10 & 0.21 & 0.33 & 0.27 & 0.22 & 0.14 \\
+\texttt{csis} union    & 0.23 & 0.37 & 0.46 & 0.19 & 0.37 & 0.49 & 0.45 & 0.37 & 0.24 \\
+drift-aware            & 0.23 & 0.38 & 0.48 & 0.21 & 0.39 & 0.49 & 0.46 & 0.38 & 0.24 \\
+\texttt{csis}+NIS union & 0.21 & 0.35 & 0.47 & 0.17 & 0.35 & 0.51 & 0.45 & 0.36 & 0.22 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At $p=5\times10^4$ and $K=1000$ (six cells, $n\in\{1000,2000\}$, $\rho=0.5$) the \texttt{csis} union reaches $0.30$ ($n=1000$) and $0.46$ ($n=2000$) against $0.11$ and $0.14$ for the plain \texttt{sis} union. Screening time for both batches is $0.2$ s (\texttt{sis}, \texttt{csis}) and $1.5$ s (NIS) at $p=10^4$, $n=1000$; $0.8$ s and $8$ s at $p=5\times10^4$, $n=1000$; and $2$ s and $20$ s at $p=5\times10^4$, $n=2000$.
+
+\begin{table}[h]
+\centering
+\caption{Linear versus highly non-linear drift, $p=10^4$, $n=1000$ per batch, $\rho=0.5$, drift energy $1.0$, $K=500$. Recall: 10 replicates. FSDS AUC over all $p$ (not-retained features ranked last): 5 replicates. ``Retained-only AUC'' is the AUC of the 0/1 retention indicator alone, with no FSDS ranking. Non-linear drift: $|z|$ (decay), $z^2$ (emerge), $\sin 3z$ (reverse, odd), $\mathbf 1\{|z|<0.5\}$ (new), plus products.}
+\label{tab:nonlinear}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{linear drift} & \multicolumn{3}{c}{non-linear drift} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+retained set & recall & FSDS AUC & retained-only AUC & recall & FSDS AUC & retained-only AUC \\
+\midrule
+no screening           & --   & 0.580 & 0.500 & --   & 0.550 & 0.500 \\
+\texttt{sis} union     & 0.23 & 0.594 & 0.592 & 0.04 & 0.500 & 0.500 \\
+\texttt{csis} union    & 0.53 & 0.739 & 0.734 & 0.06 & 0.509 & 0.508 \\
+drift-aware            & 0.57 & 0.754 & 0.751 & 0.08 & 0.522 & 0.521 \\
+\texttt{csis}+NIS union & 0.54 & 0.754 & 0.749 & 0.10 & 0.532 & 0.532 \\
+\texttt{sq} union      & 0.15 & 0.564 & 0.563 & 0.28 & 0.608 & 0.604 \\
+\texttt{nl} union      & 0.58 & 0.786 & 0.780 & 0.22 & 0.577 & 0.575 \\
+oracle retention       & 1.00 & 0.980 & 0.976 & 1.00 & 0.982 & 0.976 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Reading.}
+(i) Recall rises with $n$, drift energy and falls with $\rho$; conditioning on the core factors matters most at large $\rho$ ($\rho=0.8$: $0.24$ against $0.09$). (ii) With linear drift, screening cuts FSDS time from $24$ s to $6$ s, and the AUC gain ($0.58\to0.75$) equals the AUC of the retention indicator alone, so FSDS adds essentially no ranking information beyond the screen in these runs. (iii) With highly non-linear drift every linear or low-resolution screen falls to near-random recall ($\le0.11$) and the FSDS AUC stays near the no-screening value; the centred-square scan recovers the even-function groups ($0.66$ decay, $0.46$ emerge at $K=500$) but not the odd $\sin 3z$ group, and it is matched to this data-generating process by construction. Recall reaches only $0.28$ for $K=500$ and $0.38$ for drift energy $2.0$. (iv) Screening changes the estimand to the retained set; the drift types that a screen cannot see are lost before FSDS starts. The grid is a single data-generating process; the interaction and non-monotone groups are not recovered by any screen here.

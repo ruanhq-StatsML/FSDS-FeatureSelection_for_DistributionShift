@@ -128,22 +128,43 @@ csis_union, p = 10000, K = 500, sd = 1.0, by n and rho (sis_union in brackets):
 - Scan seconds (both batches, mean over cells): p = 10000 SIS 0.2, conditional SIS 0.2, 5-bin NIS 1.9; p = 50000 (n =
   1000 / 2000) SIS 0.8 / 2.1, NIS 8.3 / 20.0.
 
-## Highly nonlinear drift (`--nl`, p = 10000, K = 500, sd = 1.0, 5 reps; `screening_fsds_nl_p10000_sd1.0.txt`)
+## Highly nonlinear drift (`--nl`, p = 10000, n = 1000, rho = 0.5, K = 500, 10 reps; `screening_nl_p10000_sd1.0.txt`, `..._sd2.0.txt`)
 
-Drift shapes: |z| (decay), z^2 (emerge), sin(3z) (reverse), 1{|z| < 0.5} (new band), products (interaction).
+Drift shapes: |z| (decay), z^2 (emerge), sin(3z) (reverse, odd), 1{|z| < 0.5} (new band), products (interaction).
+Recall of the 24 drift coordinates, sd = 1.0 (sd = 2.0 in brackets):
 
 | method | recall | decay | emerge | reverse | band | inter |
 |:--|--:|--:|--:|--:|--:|--:|
-| sis_union | 0.05 | 0.04 | 0.00 | 0.12 | 0.08 | 0.00 |
-| csis_union | 0.07 | 0.00 | 0.16 | 0.04 | 0.08 | 0.05 |
-| drift_aware | 0.09 | 0.00 | 0.16 | 0.08 | 0.12 | 0.10 |
-| np_union (5-bin) | 0.12 | 0.08 | 0.20 | 0.08 | 0.20 | 0.00 |
-| sq_union (centred square) | 0.26 | 0.64 | 0.36 | 0.12 | 0.12 | 0.00 |
-| nl_union (linear + 5-bin + square) | 0.20 | 0.32 | 0.44 | 0.04 | 0.12 | 0.05 |
-| random | 0.02 | | | | | | |
+| sis_union | 0.04 (0.04) | 0.04 | 0.00 | 0.06 | 0.04 | 0.05 |
+| csis_union | 0.06 (0.06) | 0.04 | 0.08 | 0.06 | 0.10 | 0.02 |
+| drift_aware | 0.08 (0.06) | 0.04 | 0.08 | 0.06 | 0.14 | 0.05 |
+| np_union (5-bin) | 0.11 (0.15) | 0.14 | 0.16 | 0.04 | 0.20 | 0.00 |
+| sq_union (centred square) | 0.28 (0.38) | 0.66 | 0.46 | 0.08 | 0.12 | 0.00 |
+| nl_union (linear + 5-bin + square) | 0.22 (0.31) | 0.44 | 0.46 | 0.02 | 0.14 | 0.02 |
+| random | 0.03 | | | | | |
 
-Linear screens that retained 0.46 under linear drift retain 0.07 here. The square screen helps only for even shapes.
-No screen here finds sin(3z) or the product terms; the FSDS stage was not run for nonlinear drift.
+FSDS stage (5 reps; AUC over all p; `mech` = AUC of the retention indicator alone), linear drift from
+`screening_lin2_p10000_sd1.0.txt` run with the same code:
+
+| retained set | linear drift AUC (mech) | nonlinear drift AUC (mech) |
+|:--|--:|--:|
+| no screen (24.6 s vs 25.1 s) | 0.580 (0.500) | 0.550 (0.500) |
+| sis_union | 0.594 (0.592) | 0.500 (0.500) |
+| csis_union | 0.739 (0.734) | 0.509 (0.508) |
+| drift_aware | 0.754 (0.751) | 0.522 (0.521) |
+| csis_np_union | 0.754 (0.749) | 0.532 (0.532) |
+| sq_union | 0.564 (0.563) | 0.608 (0.604) |
+| nl_union | 0.786 (0.780) | 0.577 (0.575) |
+| oracle retention | 0.980 (0.976) | 0.982 (0.976) |
+
+- Linear screens that retain 0.46-0.57 under linear drift retain 0.04-0.08 here (near the 0.03 of random), and FSDS
+  on their output is no better than no screening (0.50-0.53 vs 0.55).
+- The centred-square scan recovers the even shapes (decay 0.66, emerge 0.46 at K = 500) and gives the best nonlinear
+  FSDS AUC (0.608), but it is matched to this DGP by construction, misses sin(3z) and the products, and loses on linear
+  drift (0.564). The combined `nl_union` is the best on linear drift (0.786) and mid-range on nonlinear (0.577).
+- The oracle gap stays large (0.98 vs 0.61): with nonlinear drift, screening at p = 10000 does not rescue FSDS. A
+  generic nonlinear screen (distance correlation or a finer-bin NIS) was not tested.
+- FSDS inside the retained set again adds essentially nothing beyond the retention indicator.
 
 ## Scope
 
