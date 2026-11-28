@@ -1,0 +1,27 @@
+rep 0 done
+rep 1 done
+rep 2 done
+rep 3 done
+rep 4 done
+
+== p=10000, n=1000/batch, rho=0.5, K=500: mean drift recall by type (5 reps)
+                size  recall  rec_decay  rec_emerge  rec_reverse  rec_nonmono  rec_inter
+method                                                                                  
+csis_inter      23.6    0.00       0.00        0.00         0.00         0.00       0.00
+csis_np_union  447.2    0.11       0.08        0.24         0.04         0.12       0.05
+csis_pooled    500.0    0.06       0.04        0.04         0.08         0.04       0.10
+csis_ref       500.0    0.04       0.04        0.04         0.04         0.00       0.10
+csis_tgt       500.0    0.07       0.00        0.16         0.00         0.08       0.10
+csis_union     500.0    0.07       0.00        0.16         0.04         0.08       0.05
+drift_aware    500.0    0.09       0.00        0.16         0.08         0.12       0.10
+isis_union     500.0    0.08       0.00        0.16         0.08         0.04       0.10
+nl_union       500.0    0.20       0.32        0.44         0.04         0.12       0.05
+np_union       500.0    0.12       0.08        0.20         0.08         0.20       0.00
+oracle         500.0    1.00       1.00        1.00         1.00         1.00       1.00
+random         500.0    0.02       0.04        0.04         0.00         0.00       0.00
+sis_ref        500.0    0.06       0.04        0.00         0.08         0.12       0.05
+sis_tgt        500.0    0.07       0.08        0.00         0.08         0.08       0.10
+sis_union      500.0    0.05       0.04        0.00         0.12         0.08       0.00
+sq_union       500.0    0.26       0.64        0.36         0.12         0.12       0.00
+
+screening seconds per replicate (scan of both batches): {'sec_sis': 0.2, 'sec_csis': 0.2, 'sec_np': 1.5, 'sec_sq': 0.2}

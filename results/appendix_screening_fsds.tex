@@ -1,0 +1,34 @@
+% Appendix section: screening before FSDS. Include with \input{appendix_screening_fsds}
+\section{Variable screening before FSDS in ultra-high dimensions}
+\label{app:screen}
+
+\paragraph{Pipeline.}
+Each feature is scored separately in the old and the new labelled batch (marginal gain after residualising $x_j$ and $y$ on the ten leading principal components, ``conditional SIS''), the two top lists are merged at a fixed total budget $K$ (top $K/2$ per batch, remaining slots filled by the best cross-batch rank), and cross-fitted PermuCATE is run on the retained columns only. This is a composition of existing components and not a new estimator.
+
+\paragraph{Design.}
+Factor-correlated features ($10$ factors, correlation share $\rho$), $200$ dense weak stable signals (SNR $0.15$), $24$ shifted coordinates in five groups with equal drift energy (decay, emerge, reverse, $x^2$, products), total drift strength $\mathrm{sd}$. Grid: $p\in\{2000,10000\}$ with $n\in\{500,1000,2000\}$ per batch, $\rho\in\{0.2,0.5,0.8\}$, $\mathrm{sd}\in\{0.2,0.5,1.0\}$, five replicates per cell; $p=50000$ with $n\in\{1000,2000\}$, $\rho=0.5$.
+
+\paragraph{Result.}
+Table~\ref{tab:screen_recall} gives the share of shifted coordinates retained at $K=500$, $p=10000$. Conditioning on the core factors and merging the two batches are what matter: plain SIS loses to conditional SIS by a factor of two once the features are correlated, single-batch or pooled screening each miss one drift type, and the intersection is nearly empty. Recall rises with $n$ and falls with $\rho$ (conditional SIS union, $\mathrm{sd}=1$: $0.63\to0.52$ at $n=2000$ and $0.46\to0.15$ at $n=500$ as $\rho$ goes from $0.2$ to $0.8$). Because the screens are linear or $5$-bin, the $x^2$ and product groups are essentially never retained, so about $0.63$ is the ceiling for these screens. Screening takes $0.2$ s (SIS), $0.2$ s (conditional SIS) and $1.9$ s ($5$-bin) at $p=10000$, and $0.8$--$2.1$ s and $8$--$20$ s at $p=50000$, against about $6$ s of FSDS on $500$ columns and $24$ s on all $10000$.
+
+\begin{table}[h]
+\centering
+\caption{Share of the $24$ shifted coordinates retained, $p=10000$, $K=500$ (chance $0.04$); mean over $n$, $\rho$ and five replicates.}
+\label{tab:screen_recall}
+\begin{tabular}{lccc}
+\toprule
+ & sd $=0.2$ & sd $=0.5$ & sd $=1.0$ \\
+\midrule
+SIS, batch union       & 0.15 & 0.23 & 0.29 \\
+Conditional SIS, pooled & 0.13 & 0.22 & 0.29 \\
+Conditional SIS, batch union & 0.23 & 0.37 & 0.46 \\
+Drift-aware ($\max$, $|\Delta|$, $|\Delta\beta|$) & 0.23 & 0.38 & 0.48 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{What screening does and does not add.}
+In a five-replicate run at $p=10000$, $K=500$, $\mathrm{sd}=1$, the FSDS AUC with unretained features ranked last was $0.57$ without screening and $0.74$--$0.75$ with conditional SIS union or the drift-aware score. The AUC of the retained/not-retained indicator alone was $0.73$--$0.75$, so the gain in AUC is essentially the screening step; FSDS inside the retained set added little (AUC among retained columns $0.60$--$0.69$, which is itself biased because retained noise features were selected on marginal signal). The measured benefit is therefore computational (FSDS time down by a factor of four) plus the recall of the screen. Under highly nonlinear drift ($|z|$, $z^2$, $\sin 3z$, a band, products; $p=10000$, $K=500$, $\mathrm{sd}=1$, five replicates) the linear screens fail (conditional SIS union retains $0.07$, against $0.46$ under linear drift); a screen on the centred square retains $0.26$ and a union of linear, square and binned screens $0.20$.
+
+\paragraph{Limitations.}
+One data-generating process family; $5$--$10$ replicates, so differences below about $0.05$ in recall are not resolved; only a subset of the planned scenarios was run (no suppressor, state-dependent, covariate-only or variance-only designs); DC-SIS, elastic-net and group-aware screens and the dynamic-$\alpha$ rule were not implemented. After screening, FSDS answers a question about the retained set and not about all $p$ features, and no screen has a sure-screening guarantee in this setting.

@@ -19,7 +19,7 @@ Variants: T-learner RF / MLP (the earlier baselines); R-learner with one pooled 
 
 ## What to do about it (only the first two are supported by measured evidence in this repo)
 
-1. Reduce p before the PO stage (screening): see `results/screening_fsds/README.md`; that moves AUC from 0.58 to 0.75
+1. Reduce p before the PO stage (screening): see `results/screening_fsds/README.md`; that raises the all-p AUC from 0.58 to 0.75, but a decomposition shows the gain is the screen itself, with FSDS time cut 4x
    at p = 10000 in a different DGP.
 2. Factor augmentation (`fa_*` variants, `results/permucate_mlp_fa`).
 3. Untested: borrow strength from a larger old batch (an n_old = 2000 run was started and aborted unfinished; no claim
